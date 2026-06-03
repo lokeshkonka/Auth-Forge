@@ -18,7 +18,7 @@ Description : Production-inspired Identity & Access Management (IAM) system impl
 
 
 # File Structure (Tentative)
-
+``` bash
 backend/
 
 src/
@@ -40,3 +40,13 @@ src/
 └── database/
 
 test/
+
+```
+
+## Authorization Management Features
+
+![Authorization Features](./Docs/Authorization-features.png)
+
+## Permission Management  
+
+![Permission Management](./Docs/Permission-management.png)
