@@ -15,3 +15,28 @@ Description : Production-inspired Identity & Access Management (IAM) system impl
 - Based on 2 Sections
   - Our Customer
   - Customer's Application User
+
+
+# File Structure (Tentative)
+
+backend/
+
+src/
+├── main.ts
+├── app.module.ts
+│
+├── auth/
+├── organizations/
+├── members/
+├── applications/
+├── api-keys/
+├── end-users/
+├── sessions/
+├── roles/
+├── permissions/
+├── audit/
+│
+├── common/
+└── database/
+
+test/
