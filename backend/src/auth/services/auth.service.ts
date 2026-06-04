@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../../database/prisma.service';
 import { SignupDto } from '../dto/signup.dto';
-
+import { LoginDto } from '../dto/login.dto';
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
@@ -97,5 +97,43 @@ export class AuthService {
         message: 'Unable to create organization account',
       });
     }
+  }
+
+  async login(dto: LoginDto) {
+    const email = dto.email.trim().toLowerCase();
+    const member = await this.prisma.member.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!member) {
+      throw new ConflictException({
+        statusCode: 409,
+        error: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password',
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, member.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new ConflictException({
+        statusCode: 409,
+        error: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password',
+      });
+    }
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Login successful',
+      data: {
+        memberId: member.id,
+        organizationId: member.organizationId,
+        email: member.email,
+      },
+    };
   }
 }
