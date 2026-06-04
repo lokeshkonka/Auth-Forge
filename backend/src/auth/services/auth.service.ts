@@ -8,10 +8,16 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
 import { SignupDto } from '../dto/signup.dto';
 import { LoginDto } from '../dto/login.dto';
+
+import { JwtService } from '@nestjs/jwt';
+
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
 
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
   async signup(dto: SignupDto) {
     const email = dto.email.trim().toLowerCase();
     const slug = dto.organizationSlug.trim().toLowerCase();
@@ -124,7 +130,12 @@ export class AuthService {
         message: 'Invalid email or password',
       });
     }
-
+    const payload = {
+      sub: member.id,
+      organizationId: member.organizationId,
+      email: member.email,
+    };
+    const accessToken = await this.jwtService.signAsync(payload);
     return {
       success: true,
       statusCode: 200,
@@ -133,7 +144,27 @@ export class AuthService {
         memberId: member.id,
         organizationId: member.organizationId,
         email: member.email,
+        accessToken,
       },
     };
   }
+
+  async getProfile(memberId: string) {
+    const member = await this.prisma.member.findUnique({
+      where: {
+        id: memberId,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        organizationId: true,
+        createdAt: true,
+      },
+    });
+  
+    return member;
+  }
+
 }
