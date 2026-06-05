@@ -13,6 +13,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignupDto } from './dto/signup.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { AuthService } from './services/auth.service';
 
 type RequestWithAuth = {
@@ -55,6 +56,23 @@ export class AuthController {
   @Post('refresh')
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto);
+  }
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google')
+  async googleAuth() {}
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google/callback')
+  async googleAuthRedirect(@Req() req: any) {
+    const userAgent = Array.isArray(req.headers['user-agent'])
+      ? req.headers['user-agent'][0]
+      : req.headers['user-agent'];
+
+    return this.authService.googleLogin(req.user, {
+      userAgent,
+      ipAddress: req.ip,
+    });
   }
 
   @UseGuards(JwtAuthGuard)

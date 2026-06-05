@@ -31,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         expiresAt: {
           gt: new Date(),
         },
+        revokedAt: null, // Ensure session is not revoked
       },
       select: {
         id: true,
@@ -42,6 +43,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Session is no longer valid');
     }
 
-    return payload;
+    const member = await this.prisma.member.findUnique({
+      where: { id: payload.sub },
+      include: {
+        ownedOrganizations: true,
+        memberships: {
+          include: {
+            roles: {
+              include: {
+                role: {
+                  include: {
+                    permissions: {
+                      include: {
+                        permission: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!member) {
+      throw new UnauthorizedException('Member not found');
+    }
+
+    return {
+      sub: payload.sub,
+      sessionId: payload.sessionId,
+      member,
+    };
   }
 }
