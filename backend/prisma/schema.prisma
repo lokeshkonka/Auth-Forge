@@ -7,24 +7,59 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//Enums
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum AuditStatus {
+  SUCCESS
+  FAILURE
+}
+
+enum IdentityProvider {
+  LOCAL
+  GOOGLE
+}
+
+//Organization Model
+
 model Organization {
-  id   String @id @default(uuid())
+  id String @id @default(uuid())
+
   name String
   slug String @unique
 
   ownerId String?
   owner   Member? @relation("OrganizationOwner", fields: [ownerId], references: [id])
 
-  memberships Membership[]
+  memberships  Membership[]
+  roles        Role[]
+  invitations  Invitation[]
+  applications Application[]
+  auditLogs    AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+//Member Model
+
 model Member {
-  id           String @id @default(uuid())
-  email        String @unique
-  passwordHash String
+  id String @id @default(uuid())
+
+  email        String  @unique
+  passwordHash String?
 
   firstName String?
   lastName  String?
@@ -35,54 +70,406 @@ model Member {
 
   sessions MemberSession[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  identities Identity[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  invitations Invitation[]
 }
+
+// Identity
+
+model Identity {
+  id String @id @default(uuid())
+
+  provider IdentityProvider
+
+  providerUserId String?
+
+  email String
+
+  memberId  String?
+  endUserId String?
+
+  member Member? @relation(fields: [memberId], references: [id])
+
+  endUser EndUser? @relation(fields: [endUserId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, providerUserId])
+  @@index([memberId])
+  @@index([endUserId])
+}
+
+//Membership Model
 
 model Membership {
   id String @id @default(uuid())
 
-  memberId String
+  memberId       String
   organizationId String
 
-  member Member @relation(fields: [memberId], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  status MembershipStatus @default(ACTIVE)
+
+  roles MemberRole[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([memberId, organizationId])
   @@index([memberId])
   @@index([organizationId])
 }
+
+//Roles Model
+
+model Role {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  name        String
+  description String?
+
+  isSystemRole Boolean @default(false)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  permissions RolePermission[]
+
+  members MemberRole[]
+
+  invitations Invitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+}
+
+// Permission Models
+
+model Permission {
+  id String @id @default(uuid())
+
+  key String @unique
+
+  name String
+
+  category String
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  roles RolePermission[]
+
+  createdAt DateTime @default(now())
+
+  @@index([category])
+}
+
+// Role Permission Model
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([roleId, permissionId])
+}
+
+// Member Role Model
+
+model MemberRole {
+  membershipId String
+
+  roleId String
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([membershipId, roleId])
+}
+
+//invitations
+
 model Invitation {
   id String @id @default(uuid())
 
   organizationId String
 
+  roleId String
+
+  invitedById String
+
   email String
 
   token String @unique
 
+  status InvitationStatus @default(PENDING)
+
   expiresAt DateTime
 
+  acceptedAt DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  invitedBy Member @relation(fields: [invitedById], references: [id])
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token])
+  @@index([email])
+  @@index([status])
 }
+
+//Member sessions
 
 model MemberSession {
   id String @id @default(uuid())
 
   memberId String
-  member Member @relation(fields: [memberId], references: [id])
 
   refreshTokenHash String
 
   userAgent String?
+
   ipAddress String?
 
   expiresAt DateTime
+
+  lastUsedAt DateTime?
+
+  revokedAt DateTime?
+
+  member Member @relation(fields: [memberId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([memberId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+//Application Model
+
+model Application {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  name String
+
+  slug String
+
+  description String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  apiKeys ApiKey[]
+
+  endUsers EndUser[]
+
+  roles ApplicationRole[]
+
+  permissions ApplicationPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+}
+
+//Api Key Model
+
+model ApiKey {
+  id String @id @default(uuid())
+
+  applicationId String
+
+  name String
+
+  keyHash String
+
+  lastUsedAt DateTime?
+
+  expiresAt DateTime?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([applicationId])
+}
+
+// End user model
+
+model EndUser {
+  id String @id @default(uuid())
+
+  applicationId String
+
+  email String
+
+  passwordHash String?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  identities Identity[]
+
+  sessions EndUserSession[]
+
+  roleAssignments EndUserRoleAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationId, email])
+}
+
+//End User Session Model
+
+model EndUserSession {
+  id String @id @default(uuid())
+
+  endUserId String
+
+  refreshTokenHash String
+
+  expiresAt DateTime
+
+  lastUsedAt DateTime?
+
+  revokedAt DateTime?
+
+  endUser EndUser @relation(fields: [endUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+// Application Roles
+
+model ApplicationRole {
+  id String @id @default(uuid())
+
+  applicationId String
+
+  name String
+
+  description String?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  permissions ApplicationRolePermission[]
+
+  users EndUserRoleAssignment[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([applicationId, name])
+}
+
+//Application Permission
+model ApplicationPermission {
+  id String @id @default(uuid())
+
+  applicationId String
+
+  name String
+
+  description String?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  roles ApplicationRolePermission[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([applicationId, name])
+}
+
+//Application Role Permission
+
+model ApplicationRolePermission {
+  roleId String
+
+  permissionId String
+
+  role ApplicationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permission ApplicationPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+//End User Role Assignment
+
+model EndUserRoleAssignment {
+  endUserId String
+
+  roleId String
+
+  endUser EndUser @relation(fields: [endUserId], references: [id], onDelete: Cascade)
+
+  role ApplicationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([endUserId, roleId])
+}
+
+//Audit Log Model
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  actorId String?
+
+  action String
+
+  resourceType String
+
+  resourceId String?
+
+  oldValue Json?
+
+  newValue Json?
+
+  ipAddress String?
+
+  userAgent String?
+
+  status AuditStatus @default(SUCCESS)
+
+  errorMessage String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
 }
