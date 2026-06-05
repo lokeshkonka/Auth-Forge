@@ -5,6 +5,8 @@ import { InvitationsModule } from './invitations/invitations.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PrismaModule } from './database/prisma.module';
+import { RolesModule } from './roles/roles.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { PrismaModule } from './database/prisma.module';
     OrganizationsModule,
     InvitationsModule,
     SessionsModule,
+    RolesModule,
+    PermissionsModule,
     PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
