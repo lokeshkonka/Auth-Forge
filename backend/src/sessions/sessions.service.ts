@@ -53,6 +53,7 @@ export class SessionsService {
       },
     });
   }
+
   findSessionsByMemberId(memberId: string) {
     return this.prisma.memberSession.findMany({
       where: {
@@ -66,15 +67,20 @@ export class SessionsService {
         userAgent: true,
         ipAddress: true,
         expiresAt: true,
+        createdAt: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
-  deleteSession(id: string) {
-    return this.prisma.memberSession.delete({
-      where: { id },
+
+  deleteMemberSession(sessionId: string, memberId: string) {
+    return this.prisma.memberSession.deleteMany({
+      where: {
+        id: sessionId,
+        memberId,
+      },
     });
   }
 }

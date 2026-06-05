@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -290,7 +292,18 @@ export class AuthService {
       });
     }
 
-    await this.sessionsService.deleteSession(sessionId);
+    const result = await this.sessionsService.deleteMemberSession(
+      sessionId,
+      session.memberId,
+    );
+
+    if (result.count === 0) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        error: 'INVALID_SESSION',
+        message: 'Session is no longer valid',
+      });
+    }
 
     return {
       success: true,
@@ -341,11 +354,8 @@ export class AuthService {
     memberId: string,
     currentSessionId: string,
   ) {
-    const sessions =
-      await this.sessionsService.findSessionsByMemberId(
-        memberId,
-      );
-  
+    const sessions = await this.sessionsService.findSessionsByMemberId(memberId);
+
     return {
       success: true,
       statusCode: 200,
@@ -354,6 +364,39 @@ export class AuthService {
         ...session,
         current: session.id === currentSessionId,
       })),
+    };
+  }
+
+  async deleteSession(
+    memberId: string,
+    currentSessionId: string,
+    targetSessionId: string,
+  ) {
+    if (currentSessionId === targetSessionId) {
+     throw new BadRequestException({
+       statusCode: 400,
+       error: 'CURRENT_SESSION',
+       message: 'Use logout endpoint to terminate current session',
+     });
+    }
+
+    const result = await this.sessionsService.deleteMemberSession(
+     targetSessionId,
+     memberId,
+    );
+
+    if (result.count === 0) {
+     throw new NotFoundException({
+       statusCode: 404,
+        error: 'SESSION_NOT_FOUND',
+        message: 'Session not found',
+      });
+    }
+  
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Session deleted successfully',
     };
   }
 }

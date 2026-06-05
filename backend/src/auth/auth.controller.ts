@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -55,13 +64,24 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  getSessions(@Req() req: RequestWithAuth) {
+    return this.authService.getSessions(req.user.sub, req.user.sessionId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Req() req: RequestWithAuth) {
     return this.authService.logout(req.user.sessionId);
   }
+
   @UseGuards(JwtAuthGuard)
-  @Get('sessions')
-  getSessions(@Req() req: RequestWithAuth) {
-    return this.authService.getSessions(req.user.sub, req.user.sessionId);
+  @Delete('sessions/:id')
+  deleteSession(@Param('id') sessionId: string, @Req() req: RequestWithAuth) {
+    return this.authService.deleteSession(
+      req.user.sub,
+      req.user.sessionId,
+      sessionId,
+    );
   }
 }
