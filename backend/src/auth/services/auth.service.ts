@@ -15,13 +15,11 @@ import type { StringValue } from 'ms';
 import { PrismaService } from '../../database/prisma.service';
 import { SessionsService } from '../../sessions/sessions.service';
 import { LoginDto } from '../dto/login.dto';
-import { SignupDto } from '../dto/signup.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { SignupDto } from '../dto/signup.dto';
 
 type TokenPayload = {
   sub: string;
-  organizationId: string;
-  email: string;
   sessionId: string;
 };
 
@@ -84,6 +82,12 @@ export class AuthService {
             passwordHash,
             firstName: dto.firstName?.trim(),
             lastName: dto.lastName?.trim(),
+          },
+        });
+
+        const membership = await tx.membership.create({
+          data: {
+            memberId: member.id,
             organizationId: organization.id,
           },
         });
@@ -93,7 +97,7 @@ export class AuthService {
           data: { ownerId: member.id },
         });
 
-        return { organization, member };
+        return { organization, member, membership };
       });
 
       return {
@@ -103,6 +107,7 @@ export class AuthService {
         data: {
           organizationId: result.organization.id,
           memberId: result.member.id,
+          membershipId: result.membership.id,
         },
       };
     } catch {
@@ -118,6 +123,11 @@ export class AuthService {
     const email = dto.email.trim().toLowerCase();
     const member = await this.prisma.member.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+      },
     });
 
     if (!member) {
@@ -142,12 +152,7 @@ export class AuthService {
     }
 
     const sessionId = randomUUID();
-    const refreshToken = await this.issueRefreshToken(
-      member.id,
-      member.organizationId,
-      member.email,
-      sessionId,
-    );
+    const refreshToken = await this.issueRefreshToken(member.id, sessionId);
     const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
     const session = await this.sessionsService.createSession(
       sessionId,
@@ -156,12 +161,27 @@ export class AuthService {
       meta.userAgent,
       meta.ipAddress,
     );
-    const accessToken = await this.issueAccessToken(
-      member.id,
-      member.organizationId,
-      member.email,
-      session.id,
-    );
+    const accessToken = await this.issueAccessToken(member.id, session.id);
+    const organizations = await this.prisma.membership.findMany({
+      where: { memberId: member.id },
+      select: {
+        id: true,
+        organizationId: true,
+        createdAt: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            ownerId: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     return {
       success: true,
@@ -169,11 +189,11 @@ export class AuthService {
       message: 'Login successful',
       data: {
         memberId: member.id,
-        organizationId: member.organizationId,
         email: member.email,
         sessionId: session.id,
         accessToken,
         refreshToken,
+        organizations,
       },
     };
   }
@@ -185,16 +205,14 @@ export class AuthService {
 
     const payload = await this.jwtService.verifyAsync<TokenPayload>(
       dto.refreshToken,
-      {
-        secret: refreshSecret,
-      },
+      { secret: refreshSecret },
     );
 
     const session = await this.sessionsService.findActiveSessionById(
       payload.sessionId,
     );
 
-    if (!session || session.expiresAt <= new Date()) {
+    if (!session) {
       throw new UnauthorizedException({
         statusCode: 401,
         error: 'INVALID_REFRESH_TOKEN',
@@ -217,6 +235,10 @@ export class AuthService {
 
     const member = await this.prisma.member.findUnique({
       where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+      },
     });
 
     if (!member) {
@@ -229,18 +251,14 @@ export class AuthService {
 
     const newRefreshToken = await this.issueRefreshToken(
       member.id,
-      member.organizationId,
-      member.email,
       session.id,
     );
     const refreshTokenHash = await bcrypt.hash(newRefreshToken, 12);
-    await this.sessionsService.updateRefreshTokenHash(session.id, refreshTokenHash);
-    const accessToken = await this.issueAccessToken(
-      member.id,
-      member.organizationId,
-      member.email,
+    await this.sessionsService.updateRefreshTokenHash(
       session.id,
+      refreshTokenHash,
     );
+    const accessToken = await this.issueAccessToken(member.id, session.id);
 
     return {
       success: true,
@@ -248,7 +266,6 @@ export class AuthService {
       message: 'Token refreshed successfully',
       data: {
         memberId: member.id,
-        organizationId: member.organizationId,
         email: member.email,
         sessionId: session.id,
         accessToken,
@@ -275,8 +292,34 @@ export class AuthService {
         email: true,
         firstName: true,
         lastName: true,
-        organizationId: true,
         createdAt: true,
+        memberships: {
+          select: {
+            id: true,
+            organizationId: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                ownerId: true,
+                createdAt: true,
+              },
+            },
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        ownedOrganizations: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            createdAt: true,
+          },
+        },
       },
     });
   }
@@ -312,48 +355,7 @@ export class AuthService {
     };
   }
 
-  private async issueAccessToken(
-    memberId: string,
-    organizationId: string,
-    email: string,
-    sessionId: string,
-  ) {
-    const payload: TokenPayload = {
-      sub: memberId,
-      organizationId,
-      email,
-      sessionId,
-    };
-
-    return this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.configService.get<StringValue>('JWT_EXPIRES_IN') ?? '15m',
-    });
-  }
-
-  private async issueRefreshToken(
-    memberId: string,
-    organizationId: string,
-    email: string,
-    sessionId: string,
-  ) {
-    const payload: TokenPayload = {
-      sub: memberId,
-      organizationId,
-      email,
-      sessionId,
-    };
-
-    return this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
-    });
-  }
-
-  async getSessions(
-    memberId: string,
-    currentSessionId: string,
-  ) {
+  async getSessions(memberId: string, currentSessionId: string) {
     const sessions = await this.sessionsService.findSessionsByMemberId(memberId);
 
     return {
@@ -373,30 +375,54 @@ export class AuthService {
     targetSessionId: string,
   ) {
     if (currentSessionId === targetSessionId) {
-     throw new BadRequestException({
-       statusCode: 400,
-       error: 'CURRENT_SESSION',
-       message: 'Use logout endpoint to terminate current session',
-     });
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'CURRENT_SESSION',
+        message: 'Use logout endpoint to terminate current session',
+      });
     }
 
     const result = await this.sessionsService.deleteMemberSession(
-     targetSessionId,
-     memberId,
+      targetSessionId,
+      memberId,
     );
 
     if (result.count === 0) {
-     throw new NotFoundException({
-       statusCode: 404,
+      throw new NotFoundException({
+        statusCode: 404,
         error: 'SESSION_NOT_FOUND',
         message: 'Session not found',
       });
     }
-  
+
     return {
       success: true,
       statusCode: 200,
       message: 'Session deleted successfully',
     };
+  }
+
+  private async issueAccessToken(memberId: string, sessionId: string) {
+    const payload: TokenPayload = {
+      sub: memberId,
+      sessionId,
+    };
+
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      expiresIn: this.configService.get<StringValue>('JWT_EXPIRES_IN') ?? '15m',
+    });
+  }
+
+  private async issueRefreshToken(memberId: string, sessionId: string) {
+    const payload: TokenPayload = {
+      sub: memberId,
+      sessionId,
+    };
+
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '7d',
+    });
   }
 }
