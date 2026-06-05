@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-
 import { PrismaService } from '../database/prisma.service';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -33,6 +32,7 @@ export class SessionsService {
       data: {
         refreshTokenHash,
         expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+        lastUsedAt: new Date(),
       },
     });
   }
@@ -43,15 +43,25 @@ export class SessionsService {
     });
   }
 
-  findActiveSessionById(id: string) {
-    return this.prisma.memberSession.findFirst({
+  async findActiveSessionById(id: string) {
+    const session = await this.prisma.memberSession.findFirst({
       where: {
         id,
         expiresAt: {
           gt: new Date(),
         },
+        revokedAt: null,
       },
     });
+
+    if (session) {
+      await this.prisma.memberSession.update({
+        where: { id },
+        data: { lastUsedAt: new Date() }
+      });
+    }
+
+    return session;
   }
 
   findSessionsByMemberId(memberId: string) {
@@ -61,6 +71,7 @@ export class SessionsService {
         expiresAt: {
           gt: new Date(),
         },
+        revokedAt: null,
       },
       select: {
         id: true,
@@ -68,6 +79,7 @@ export class SessionsService {
         ipAddress: true,
         expiresAt: true,
         createdAt: true,
+        lastUsedAt: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -75,12 +87,32 @@ export class SessionsService {
     });
   }
 
-  deleteMemberSession(sessionId: string, memberId: string) {
-    return this.prisma.memberSession.deleteMany({
+  revokeSession(sessionId: string, memberId: string) {
+    return this.prisma.memberSession.updateMany({
       where: {
         id: sessionId,
         memberId,
       },
+      data: {
+        revokedAt: new Date(),
+      }
     });
+  }
+
+  revokeAllSessions(memberId: string, excludeSessionId?: string) {
+    return this.prisma.memberSession.updateMany({
+      where: {
+        memberId,
+        ...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      }
+    });
+  }
+
+  deleteMemberSession(sessionId: string, memberId: string) {
+    return this.revokeSession(sessionId, memberId);
   }
 }
