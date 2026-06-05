@@ -7,45 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// MODElS
-
 model Organization {
   id   String @id @default(uuid())
   name String
   slug String @unique
 
-  ownerId String? @unique
+  ownerId String?
   owner   Member? @relation("OrganizationOwner", fields: [ownerId], references: [id])
 
-  members Member[]
+  memberships Membership[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Member {
-  id           String  @id @default(uuid())
-  email        String  @unique
+  id           String @id @default(uuid())
+  email        String @unique
   passwordHash String
-  firstName    String?
-  lastName     String?
 
-  organizationId    String
-  organization      Organization  @relation(fields: [organizationId], references: [id])
-  ownedOrganization Organization? @relation("OrganizationOwner")
+  firstName String?
+  lastName  String?
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  memberSessions MemberSession[]
+  memberships Membership[]
+
+  ownedOrganizations Organization[] @relation("OrganizationOwner")
+
+  sessions MemberSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// Sessions
+model Membership {
+  id String @id @default(uuid())
+
+  memberId String
+  organizationId String
+
+  member Member @relation(fields: [memberId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([memberId, organizationId])
+  @@index([memberId])
+  @@index([organizationId])
+}
+model Invitation {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  email String
+
+  token String @unique
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+}
 
 model MemberSession {
   id String @id @default(uuid())
 
   memberId String
-  member   Member @relation(fields: [memberId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
 
   refreshTokenHash String
 
@@ -56,4 +83,6 @@ model MemberSession {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([memberId])
 }
