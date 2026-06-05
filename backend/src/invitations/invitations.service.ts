@@ -6,15 +6,11 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
-import { MembersService } from '../members/members.service';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 
 @Injectable()
 export class InvitationsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly membersService: MembersService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async acceptInvitation(memberId: string, dto: AcceptInvitationDto) {
     const invitation = await this.prisma.invitation.findUnique({
@@ -23,11 +19,13 @@ export class InvitationsService {
         id: true,
         email: true,
         organizationId: true,
+        roleId: true,
+        status: true,
         expiresAt: true,
       },
     });
 
-    if (!invitation || invitation.expiresAt <= new Date()) {
+    if (!invitation || invitation.status !== 'PENDING' || invitation.expiresAt <= new Date()) {
       throw new NotFoundException({
         statusCode: 404,
         error: 'INVITATION_NOT_FOUND',
@@ -51,15 +49,19 @@ export class InvitationsService {
       });
     }
 
-    const existingMembership =
-      await this.membersService.findMembershipByMemberAndOrganization(
-        memberId,
-        invitation.organizationId,
-      );
+    const existingMembership = await this.prisma.membership.findUnique({
+      where: {
+        memberId_organizationId: {
+          memberId,
+          organizationId: invitation.organizationId,
+        }
+      }
+    });
 
     if (existingMembership) {
-      await this.prisma.invitation.delete({
+      await this.prisma.invitation.update({
         where: { id: invitation.id },
+        data: { status: 'REVOKED' }
       });
 
       throw new ConflictException({
@@ -69,14 +71,26 @@ export class InvitationsService {
       });
     }
 
-    const membership = await this.membersService.createMembership(
-      memberId,
-      invitation.organizationId,
-    );
-
-    await this.prisma.invitation.delete({
-      where: { id: invitation.id },
-    });
+    const [membership] = await this.prisma.$transaction([
+      this.prisma.membership.create({
+        data: {
+          memberId,
+          organizationId: invitation.organizationId,
+          roles: {
+            create: {
+              roleId: invitation.roleId,
+            }
+          }
+        }
+      }),
+      this.prisma.invitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: 'ACCEPTED',
+          acceptedAt: new Date(),
+        }
+      })
+    ]);
 
     return {
       success: true,
@@ -84,5 +98,44 @@ export class InvitationsService {
       message: 'Invitation accepted successfully',
       data: membership,
     };
+  }
+
+  async listPending(organizationId: string) {
+    return this.prisma.invitation.findMany({
+      where: {
+        organizationId,
+        status: 'PENDING',
+        expiresAt: { gt: new Date() }
+      }
+    });
+  }
+
+  async revokeInvitation(organizationId: string, id: string, actorId?: string) {
+    const invitation = await this.prisma.invitation.findFirst({
+      where: { id, organizationId }
+    });
+
+    if (!invitation || invitation.status !== 'PENDING') {
+      throw new NotFoundException('Invitation not found or not pending');
+    }
+
+    const updated = await this.prisma.invitation.update({
+      where: { id },
+      data: { status: 'REVOKED' }
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        organizationId,
+        actorId,
+        action: 'invitation.revoked',
+        resourceType: 'Invitation',
+        resourceId: id,
+        oldValue: { status: 'PENDING' } as any,
+        newValue: { status: 'REVOKED' } as any,
+      }
+    });
+
+    return updated;
   }
 }
