@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import { SessionsService } from './sessions.service';
 
-@Module({})
+@Module({
+  providers: [SessionsService],
+  exports: [SessionsService],
+})
 export class SessionsModule {}
