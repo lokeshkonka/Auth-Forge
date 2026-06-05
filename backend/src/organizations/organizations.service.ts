@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../database/prisma.service';
 import { MembersService } from '../members/members.service';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { UpdateMembershipStatusDto } from './dto/update-membership-status.dto';
 
 @Injectable()
 export class OrganizationsService {
@@ -46,57 +47,27 @@ export class OrganizationsService {
       });
     }
 
-    if (organization.ownerId !== inviterMemberId) {
-      throw new ForbiddenException({
-        statusCode: 403,
-        error: 'NOT_ORGANIZATION_OWNER',
-        message: 'Only the organization owner can invite members',
-      });
-    }
-
-    const existingMembership =
-      await this.membersService.findMembershipByMemberAndOrganization(
-        inviterMemberId,
-        organizationId,
-      );
-
-    if (!existingMembership) {
-      throw new ForbiddenException({
-        statusCode: 403,
-        error: 'NOT_A_MEMBER',
-        message: 'You must belong to the organization to invite members',
-      });
-    }
-
-    const duplicateMembership = await this.prisma.member.findFirst({
-      where: {
-        email,
-        memberships: {
-          some: {
-            organizationId,
-          },
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (duplicateMembership) {
-      throw new ConflictException({
-        statusCode: 409,
-        error: 'MEMBER_ALREADY_IN_ORGANIZATION',
-        message: 'Member is already part of this organization',
-      });
-    }
-
     const invitation = await this.prisma.invitation.create({
       data: {
         organizationId,
         email,
+        roleId: dto.roleId,
+        invitedById: inviterMemberId,
         token: randomUUID(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
+    });
+
+    // Generate Audit Log
+    await this.prisma.auditLog.create({
+      data: {
+        organizationId,
+        actorId: inviterMemberId,
+        action: 'member.invited',
+        resourceType: 'Invitation',
+        resourceId: invitation.id,
+        newValue: { email, roleId: dto.roleId } as any,
+      }
     });
 
     return {
@@ -105,5 +76,153 @@ export class OrganizationsService {
       message: 'Invitation created successfully',
       data: invitation,
     };
+  }
+
+  async listMembers(organizationId: string) {
+    return this.prisma.membership.findMany({
+      where: { organizationId },
+      include: {
+        member: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          }
+        },
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+  }
+
+  async getMemberDetails(organizationId: string, membershipId: string) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { id: membershipId, organizationId },
+      include: {
+        member: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          }
+        },
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    return membership;
+  }
+
+  async updateMemberStatus(
+    organizationId: string,
+    membershipId: string,
+    dto: UpdateMembershipStatusDto,
+  ) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { id: membershipId, organizationId }
+    });
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    return this.prisma.membership.update({
+      where: { id: membershipId },
+      data: { status: dto.status }
+    });
+  }
+
+  async removeMember(organizationId: string, membershipId: string) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { id: membershipId, organizationId },
+      include: { organization: true }
+    });
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    if (membership.organization.ownerId === membership.memberId) {
+      throw new ConflictException('Cannot remove the organization owner');
+    }
+
+    const deleted = await this.prisma.membership.delete({
+      where: { id: membershipId }
+    });
+
+    // Generate Audit Log
+    await this.prisma.auditLog.create({
+      data: {
+        organizationId,
+        action: 'member.removed',
+        resourceType: 'Member',
+        resourceId: membership.memberId,
+        oldValue: { membershipId } as any,
+      }
+    });
+
+    return deleted;
+  }
+
+  async assignRole(organizationId: string, membershipId: string, roleId: string) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { id: membershipId, organizationId }
+    });
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    const role = await this.prisma.role.findFirst({
+      where: { id: roleId, organizationId }
+    });
+
+    if (!role) {
+      throw new NotFoundException('Role not found in this organization');
+    }
+
+    return this.prisma.memberRole.upsert({
+      where: {
+        membershipId_roleId: {
+          membershipId,
+          roleId
+        }
+      },
+      update: {},
+      create: {
+        membershipId,
+        roleId
+      }
+    });
+  }
+
+  async removeRole(organizationId: string, membershipId: string, roleId: string) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { id: membershipId, organizationId }
+    });
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    return this.prisma.memberRole.deleteMany({
+      where: {
+        membershipId,
+        roleId
+      }
+    });
   }
 }

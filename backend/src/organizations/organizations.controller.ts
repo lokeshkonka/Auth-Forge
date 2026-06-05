@@ -1,8 +1,12 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { UpdateMembershipStatusDto } from './dto/update-membership-status.dto';
+import { AssignRoleDto } from './dto/assign-role.dto';
 import { OrganizationsService } from './organizations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
 
 type RequestWithAuth = {
   user: {
@@ -21,10 +25,11 @@ export class OrganizationsController {
     return this.organizationsService.getOrganizations(req.user.sub);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post(':id/invitations')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('member.invite')
+  @Post(':orgId/invitations')
   inviteMember(
-    @Param('id') organizationId: string,
+    @Param('orgId') organizationId: string,
     @Req() req: RequestWithAuth,
     @Body() dto: InviteMemberDto,
   ) {
@@ -33,5 +38,65 @@ export class OrganizationsController {
       req.user.sub,
       dto,
     );
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('member.read')
+  @Get(':orgId/members')
+  listMembers(@Param('orgId') organizationId: string) {
+    return this.organizationsService.listMembers(organizationId);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('member.read')
+  @Get(':orgId/members/:membershipId')
+  getMemberDetails(
+    @Param('orgId') organizationId: string,
+    @Param('membershipId') membershipId: string,
+  ) {
+    return this.organizationsService.getMemberDetails(organizationId, membershipId);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('member.update')
+  @Patch(':orgId/members/:membershipId')
+  updateMemberStatus(
+    @Param('orgId') organizationId: string,
+    @Param('membershipId') membershipId: string,
+    @Body() dto: UpdateMembershipStatusDto,
+  ) {
+    return this.organizationsService.updateMemberStatus(organizationId, membershipId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('member.delete')
+  @Delete(':orgId/members/:membershipId')
+  removeMember(
+    @Param('orgId') organizationId: string,
+    @Param('membershipId') membershipId: string,
+  ) {
+    return this.organizationsService.removeMember(organizationId, membershipId);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('role.assign')
+  @Post(':orgId/memberships/:membershipId/roles')
+  assignRole(
+    @Param('orgId') organizationId: string,
+    @Param('membershipId') membershipId: string,
+    @Body() dto: AssignRoleDto,
+  ) {
+    return this.organizationsService.assignRole(organizationId, membershipId, dto.roleId);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermissions('role.assign')
+  @Delete(':orgId/memberships/:membershipId/roles/:roleId')
+  removeRole(
+    @Param('orgId') organizationId: string,
+    @Param('membershipId') membershipId: string,
+    @Param('roleId') roleId: string,
+  ) {
+    return this.organizationsService.removeRole(organizationId, membershipId, roleId);
   }
 }
