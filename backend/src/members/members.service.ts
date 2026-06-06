@@ -51,4 +51,52 @@ export class MembersService {
       },
     });
   }
+
+  async getMemberPermissions(memberId: string, organizationId: string): Promise<string[]> {
+    // Check if user is organization owner
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { ownerId: true },
+    });
+
+    if (organization?.ownerId === memberId) {
+      const allPermissions = await this.prisma.permission.findMany({ select: { key: true } });
+      return allPermissions.map(p => p.key);
+    }
+
+    const membership = await this.prisma.membership.findUnique({
+      where: {
+        memberId_organizationId: {
+          memberId,
+          organizationId,
+        },
+      },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!membership) return [];
+
+    const permissions = new Set<string>();
+    for (const memberRole of membership.roles) {
+      for (const rp of memberRole.role.permissions) {
+        permissions.add(rp.permission.key);
+      }
+    }
+
+    return Array.from(permissions);
+  }
 }
