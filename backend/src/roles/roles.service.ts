@@ -1,14 +1,35 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/services/audit.service';
+import { MembersService } from '../members/members.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Injectable()
 export class RolesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+    private readonly membersService: MembersService,
+  ) {}
 
-  async create(organizationId: string, createRoleDto: CreateRoleDto, actorId?: string) {
+  async create(organizationId: string, createRoleDto: CreateRoleDto, actorId: string) {
     const { name, description, permissionIds } = createRoleDto;
+
+    // Check if actor has the permissions they are trying to assign
+    if (permissionIds && permissionIds.length > 0) {
+      const actorPermissions = await this.membersService.getMemberPermissions(actorId, organizationId);
+      const requestedPermissions = await this.prisma.permission.findMany({
+        where: { id: { in: permissionIds } },
+        select: { key: true }
+      });
+
+      for (const rp of requestedPermissions) {
+        if (!actorPermissions.includes(rp.key)) {
+          throw new ForbiddenException(`You cannot assign permission \${rp.key} as you do not have it yourself`);
+        }
+      }
+    }
 
     const existingRole = await this.prisma.role.findUnique({
       where: {
@@ -43,15 +64,13 @@ export class RolesService {
       }
     });
 
-    await this.prisma.auditLog.create({
-      data: {
-        organizationId,
-        actorId,
-        action: 'role.created',
-        resourceType: 'Role',
-        resourceId: role.id,
-        newValue: { name, description, permissionIds } as any,
-      }
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'role.created',
+      resourceType: 'Role',
+      resourceId: role.id,
+      newValue: { name, description, permissionIds },
     });
 
     return role;
@@ -89,8 +108,23 @@ export class RolesService {
     return role;
   }
 
-  async update(organizationId: string, id: string, updateRoleDto: UpdateRoleDto, actorId?: string) {
+  async update(organizationId: string, id: string, updateRoleDto: UpdateRoleDto, actorId: string) {
     const { name, description, permissionIds } = updateRoleDto;
+
+    // Check if actor has the permissions they are trying to assign
+    if (permissionIds && permissionIds.length > 0) {
+      const actorPermissions = await this.membersService.getMemberPermissions(actorId, organizationId);
+      const requestedPermissions = await this.prisma.permission.findMany({
+        where: { id: { in: permissionIds } },
+        select: { key: true }
+      });
+
+      for (const rp of requestedPermissions) {
+        if (!actorPermissions.includes(rp.key)) {
+          throw new ForbiddenException(`You cannot assign permission \${rp.key} as you do not have it yourself`);
+        }
+      }
+    }
 
     const role = await this.findOne(organizationId, id);
 
@@ -136,16 +170,14 @@ export class RolesService {
       }
     });
 
-    await this.prisma.auditLog.create({
-      data: {
-        organizationId,
-        actorId,
-        action: 'role.updated',
-        resourceType: 'Role',
-        resourceId: id,
-        oldValue: { name: role.name, description: role.description } as any,
-        newValue: { name, description, permissionIds } as any,
-      }
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'role.updated',
+      resourceType: 'Role',
+      resourceId: id,
+      oldValue: { name: role.name, description: role.description },
+      newValue: { name, description, permissionIds },
     });
 
     return updatedRole;
@@ -161,15 +193,13 @@ export class RolesService {
       where: { id },
     });
 
-    await this.prisma.auditLog.create({
-      data: {
-        organizationId,
-        actorId,
-        action: 'role.deleted',
-        resourceType: 'Role',
-        resourceId: id,
-        oldValue: { name: role.name } as any,
-      }
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'role.deleted',
+      resourceType: 'Role',
+      resourceId: id,
+      oldValue: { name: role.name },
     });
 
     return deleted;
