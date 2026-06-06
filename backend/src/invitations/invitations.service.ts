@@ -6,11 +6,15 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/services/audit.service';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 
 @Injectable()
 export class InvitationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   async acceptInvitation(memberId: string, dto: AcceptInvitationDto) {
     const invitation = await this.prisma.invitation.findUnique({
@@ -92,6 +96,15 @@ export class InvitationsService {
       })
     ]);
 
+    await this.auditService.createLog({
+      organizationId: invitation.organizationId,
+      actorId: memberId,
+      action: 'invitation.accepted',
+      resourceType: 'Invitation',
+      resourceId: invitation.id,
+      newValue: { membershipId: membership.id },
+    });
+
     return {
       success: true,
       statusCode: 200,
@@ -124,16 +137,14 @@ export class InvitationsService {
       data: { status: 'REVOKED' }
     });
 
-    await this.prisma.auditLog.create({
-      data: {
-        organizationId,
-        actorId,
-        action: 'invitation.revoked',
-        resourceType: 'Invitation',
-        resourceId: id,
-        oldValue: { status: 'PENDING' } as any,
-        newValue: { status: 'REVOKED' } as any,
-      }
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'invitation.revoked',
+      resourceType: 'Invitation',
+      resourceId: id,
+      oldValue: { status: 'PENDING' },
+      newValue: { status: 'REVOKED' },
     });
 
     return updated;
