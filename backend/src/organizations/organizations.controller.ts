@@ -64,8 +64,9 @@ export class OrganizationsController {
     @Param('orgId') organizationId: string,
     @Param('membershipId') membershipId: string,
     @Body() dto: UpdateMembershipStatusDto,
+    @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.updateMemberStatus(organizationId, membershipId, dto);
+    return this.organizationsService.updateMemberStatus(organizationId, membershipId, dto, req.user.sub);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -74,8 +75,9 @@ export class OrganizationsController {
   removeMember(
     @Param('orgId') organizationId: string,
     @Param('membershipId') membershipId: string,
+    @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.removeMember(organizationId, membershipId);
+    return this.organizationsService.removeMember(organizationId, membershipId, req.user.sub);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -85,8 +87,9 @@ export class OrganizationsController {
     @Param('orgId') organizationId: string,
     @Param('membershipId') membershipId: string,
     @Body() dto: AssignRoleDto,
+    @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.assignRole(organizationId, membershipId, dto.roleId);
+    return this.organizationsService.assignRole(organizationId, membershipId, dto.roleId, req.user.sub);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -96,7 +99,8 @@ export class OrganizationsController {
     @Param('orgId') organizationId: string,
     @Param('membershipId') membershipId: string,
     @Param('roleId') roleId: string,
+    @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.removeRole(organizationId, membershipId, roleId);
+    return this.organizationsService.removeRole(organizationId, membershipId, roleId, req.user.sub);
   }
 }
