@@ -20,6 +20,7 @@ type RequestWithAuth = {
   ip?: string;
   headers: {
     'user-agent'?: string | string[];
+    authorization?: string;
   };
   user: {
     sub: string;
@@ -90,7 +91,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Req() req: RequestWithAuth) {
-    return this.authService.logout(req.user.sessionId);
+    const token = req.headers.authorization?.split(' ')[1] ?? '';
+    return this.authService.logout(req.user.sessionId, token);
   }
 
   @UseGuards(JwtAuthGuard)
