@@ -14,6 +14,8 @@ import type { StringValue } from 'ms';
 
 import { PrismaService } from '../../database/prisma.service';
 import { SessionsService } from '../../sessions/sessions.service';
+import { AuditService } from '../../audit/services/audit.service';
+import { TokenBlacklistService } from '../../common/services/token-blacklist.service';
 import { LoginDto } from '../dto/login.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { SignupDto } from '../dto/signup.dto';
@@ -21,6 +23,7 @@ import { SignupDto } from '../dto/signup.dto';
 type TokenPayload = {
   sub: string;
   sessionId: string;
+  exp: number;
 };
 
 type LoginMeta = {
@@ -35,6 +38,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly sessionsService: SessionsService,
+    private readonly auditService: AuditService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -128,6 +133,18 @@ export class AuthService {
           }
         });
 
+        // 8. Log organization creation
+        await tx.auditLog.create({
+          data: {
+            organizationId: organization.id,
+            actorId: member.id,
+            action: 'organization.created',
+            resourceType: 'Organization',
+            resourceId: organization.id,
+            newValue: { name: organization.name, slug: organization.slug },
+          }
+        });
+
         return { organization, member, membership };
       });
 
@@ -202,6 +219,8 @@ export class AuthService {
 
     const accessToken = await this.issueAccessToken(member.id, sessionId);
 
+    await this.logMemberEvent(member.id, 'member.login.google', 'Session', sessionId, meta);
+
     return {
       success: true,
       statusCode: 200,
@@ -258,6 +277,8 @@ export class AuthService {
 
     const accessToken = await this.issueAccessToken(member.id, sessionId);
 
+    await this.logMemberEvent(member.id, 'member.login', 'Session', sessionId, meta);
+
     return {
       success: true,
       statusCode: 200,
@@ -270,6 +291,39 @@ export class AuthService {
         refreshToken,
       },
     };
+  }
+
+  private async logMemberEvent(memberId: string, action: string, resourceType: string, resourceId?: string, meta: LoginMeta = {}) {
+    const memberships = await this.prisma.membership.findMany({
+      where: { memberId },
+    });
+
+    for (const membership of memberships) {
+      await this.auditService.createLog({
+        organizationId: membership.organizationId,
+        actorId: memberId,
+        action,
+        resourceType,
+        resourceId,
+        ipAddress: meta.ipAddress,
+        userAgent: meta.userAgent,
+      });
+    }
+
+    if (memberships.length === 0) {
+      const systemOrg = await this.prisma.organization.findUnique({ where: { slug: 'system' } });
+      if (systemOrg) {
+        await this.auditService.createLog({
+          organizationId: systemOrg.id,
+          actorId: memberId,
+          action,
+          resourceType,
+          resourceId,
+          ipAddress: meta.ipAddress,
+          userAgent: meta.userAgent,
+        });
+      }
+    }
   }
 
   async refresh(dto: RefreshTokenDto) {
@@ -401,7 +455,7 @@ export class AuthService {
     });
   }
 
-  async logout(sessionId: string) {
+  async logout(sessionId: string, token: string) {
     const session = await this.sessionsService.findActiveSessionById(sessionId);
 
     if (!session) {
@@ -424,6 +478,21 @@ export class AuthService {
         message: 'Session is no longer valid',
       });
     }
+
+    // Blacklist access token
+    try {
+      const payload = this.jwtService.decode(token) as TokenPayload;
+      if (payload && payload.exp) {
+        const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
+        if (expiresIn > 0) {
+          await this.tokenBlacklistService.blacklistToken(token, expiresIn);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to blacklist token:', err);
+    }
+
+    await this.logMemberEvent(session.memberId, 'member.logout', 'Session', sessionId);
 
     return {
       success: true,
