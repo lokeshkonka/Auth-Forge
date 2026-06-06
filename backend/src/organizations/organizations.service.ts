@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -8,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 
 import { PrismaService } from '../database/prisma.service';
 import { MembersService } from '../members/members.service';
+import { AuditService } from '../audit/services/audit.service';
 import { InviteMemberDto } from './dto/invite-member.dto';
 import { UpdateMembershipStatusDto } from './dto/update-membership-status.dto';
 
@@ -16,6 +18,7 @@ export class OrganizationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly membersService: MembersService,
+    private readonly auditService: AuditService,
   ) {}
 
   getOrganizations(memberId: string) {
@@ -47,6 +50,41 @@ export class OrganizationsService {
       });
     }
 
+    // 1. Check if the role belongs to this organization
+    const role = await this.prisma.role.findFirst({
+      where: { id: dto.roleId, organizationId },
+    });
+
+    if (!role) {
+      throw new BadRequestException('The selected role does not belong to this organization');
+    }
+
+    // 2. Check if the user is already a member
+    const existingMember = await this.prisma.membership.findFirst({
+      where: {
+        organizationId,
+        member: { email },
+      },
+    });
+
+    if (existingMember) {
+      throw new ConflictException('This user is already a member of the organization');
+    }
+
+    // 3. Check for existing pending invitation
+    const existingInvitation = await this.prisma.invitation.findFirst({
+      where: {
+        organizationId,
+        email,
+        status: 'PENDING',
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (existingInvitation) {
+      throw new ConflictException('A pending invitation already exists for this email');
+    }
+
     const invitation = await this.prisma.invitation.create({
       data: {
         organizationId,
@@ -59,15 +97,13 @@ export class OrganizationsService {
     });
 
     // Generate Audit Log
-    await this.prisma.auditLog.create({
-      data: {
-        organizationId,
-        actorId: inviterMemberId,
-        action: 'member.invited',
-        resourceType: 'Invitation',
-        resourceId: invitation.id,
-        newValue: { email, roleId: dto.roleId } as any,
-      }
+    await this.auditService.createLog({
+      organizationId,
+      actorId: inviterMemberId,
+      action: 'invitation.created',
+      resourceType: 'Invitation',
+      resourceId: invitation.id,
+      newValue: { email, roleId: dto.roleId },
     });
 
     return {
@@ -130,6 +166,7 @@ export class OrganizationsService {
     organizationId: string,
     membershipId: string,
     dto: UpdateMembershipStatusDto,
+    actorId?: string,
   ) {
     const membership = await this.prisma.membership.findFirst({
       where: { id: membershipId, organizationId }
@@ -139,13 +176,25 @@ export class OrganizationsService {
       throw new NotFoundException('Membership not found');
     }
 
-    return this.prisma.membership.update({
+    const updated = await this.prisma.membership.update({
       where: { id: membershipId },
       data: { status: dto.status }
     });
+
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'membership.status_updated',
+      resourceType: 'Membership',
+      resourceId: membershipId,
+      oldValue: { status: membership.status },
+      newValue: { status: dto.status },
+    });
+
+    return updated;
   }
 
-  async removeMember(organizationId: string, membershipId: string) {
+  async removeMember(organizationId: string, membershipId: string, actorId?: string) {
     const membership = await this.prisma.membership.findFirst({
       where: { id: membershipId, organizationId },
       include: { organization: true }
@@ -164,20 +213,19 @@ export class OrganizationsService {
     });
 
     // Generate Audit Log
-    await this.prisma.auditLog.create({
-      data: {
-        organizationId,
-        action: 'member.removed',
-        resourceType: 'Member',
-        resourceId: membership.memberId,
-        oldValue: { membershipId } as any,
-      }
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'member.removed',
+      resourceType: 'Member',
+      resourceId: membership.memberId,
+      oldValue: { membershipId },
     });
 
     return deleted;
   }
 
-  async assignRole(organizationId: string, membershipId: string, roleId: string) {
+  async assignRole(organizationId: string, membershipId: string, roleId: string, actorId?: string) {
     const membership = await this.prisma.membership.findFirst({
       where: { id: membershipId, organizationId }
     });
@@ -194,7 +242,7 @@ export class OrganizationsService {
       throw new NotFoundException('Role not found in this organization');
     }
 
-    return this.prisma.memberRole.upsert({
+    const assignment = await this.prisma.memberRole.upsert({
       where: {
         membershipId_roleId: {
           membershipId,
@@ -207,9 +255,20 @@ export class OrganizationsService {
         roleId
       }
     });
+
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'role.assigned',
+      resourceType: 'Membership',
+      resourceId: membershipId,
+      newValue: { roleId },
+    });
+
+    return assignment;
   }
 
-  async removeRole(organizationId: string, membershipId: string, roleId: string) {
+  async removeRole(organizationId: string, membershipId: string, roleId: string, actorId?: string) {
     const membership = await this.prisma.membership.findFirst({
       where: { id: membershipId, organizationId }
     });
@@ -218,11 +277,22 @@ export class OrganizationsService {
       throw new NotFoundException('Membership not found');
     }
 
-    return this.prisma.memberRole.deleteMany({
+    const result = await this.prisma.memberRole.deleteMany({
       where: {
         membershipId,
         roleId
       }
     });
+
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'role.unassigned',
+      resourceType: 'Membership',
+      resourceId: membershipId,
+      oldValue: { roleId },
+    });
+
+    return result;
   }
 }
