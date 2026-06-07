@@ -14,6 +14,7 @@ import type { StringValue } from 'ms';
 import { PrismaService } from '../../database/prisma.service';
 import { EndUserSessionsService } from '../../sessions/services/end-user-sessions.service';
 import { TokenBlacklistService } from '../../common/services/token-blacklist.service';
+import { AuditService } from '../../audit/services/audit.service';
 import { EndUserSignupDto } from '../dto/signup.dto';
 import { EndUserLoginDto } from '../dto/login.dto';
 import { EndUserRefreshTokenDto } from '../dto/refresh-token.dto';
@@ -33,6 +34,7 @@ export class EndUsersService {
     private readonly configService: ConfigService,
     private readonly sessionsService: EndUserSessionsService,
     private readonly tokenBlacklistService: TokenBlacklistService,
+    private readonly auditService: AuditService,
   ) {}
 
   async signup(appId: string, dto: EndUserSignupDto) {
@@ -71,6 +73,14 @@ export class EndUsersService {
         },
       });
 
+      await this.auditService.createLog({
+        organizationId: application.organizationId,
+        action: 'end_user.created',
+        resourceType: 'EndUser',
+        resourceId: user.id,
+        newValue: { email: user.email, applicationId: appId },
+      });
+
       return {
         success: true,
         statusCode: 201,
@@ -86,7 +96,7 @@ export class EndUsersService {
     }
   }
 
-  async login(appId: string, dto: EndUserLoginDto) {
+  async login(appId: string, dto: EndUserLoginDto, meta: { userAgent?: string; ipAddress?: string } = {}) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.prisma.endUser.findUnique({
       where: {
@@ -111,7 +121,13 @@ export class EndUsersService {
     const refreshToken = await this.issueRefreshToken(user.id, sessionId, appId);
     const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
 
-    await this.sessionsService.createSession(sessionId, user.id, refreshTokenHash);
+    await this.sessionsService.createSession(
+      sessionId,
+      user.id,
+      refreshTokenHash,
+      meta.userAgent,
+      meta.ipAddress,
+    );
 
     const accessToken = await this.issueAccessToken(user.id, sessionId, appId);
 
@@ -205,15 +221,7 @@ export class EndUsersService {
         createdAt: true,
         roleAssignments: {
           include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
+            role: true,
           },
         },
       },
@@ -226,12 +234,178 @@ export class EndUsersService {
     return user;
   }
 
-  async getSessions(userId: string) {
+  async getSessions(userId: string, currentSessionId: string) {
     const sessions = await this.sessionsService.findSessionsByEndUserId(userId);
     return {
       success: true,
       statusCode: 200,
-      data: sessions,
+      message: 'Sessions fetched successfully',
+      data: sessions.map((s) => ({
+        id: s.id,
+        userAgent: s.userAgent,
+        ipAddress: s.ipAddress,
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
+        lastUsedAt: s.lastUsedAt,
+        current: s.id === currentSessionId,
+      })),
+    };
+  }
+
+  async findAllUsers(applicationId: string) {
+    const users = await this.prisma.endUser.findMany({
+      where: { applicationId },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return {
+      success: true,
+      statusCode: 200,
+      data: users,
+    };
+  }
+
+  async createUser(applicationId: string, dto: EndUserSignupDto) {
+    return this.signup(applicationId, dto);
+  }
+
+  async updateUser(applicationId: string, id: string, dto: { email?: string; password?: string }) {
+    const user = await this.prisma.endUser.findFirst({
+      where: { id, applicationId },
+      include: { application: true }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found in this application');
+    }
+
+    const data: any = {};
+    if (dto.email) {
+      data.email = dto.email.trim().toLowerCase();
+    }
+    if (dto.password) {
+      data.passwordHash = await bcrypt.hash(dto.password, 12);
+    }
+
+    const updated = await this.prisma.endUser.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        email: true,
+        updatedAt: true,
+      },
+    });
+
+    await this.auditService.createLog({
+      organizationId: user.application.organizationId,
+      action: 'end_user.updated',
+      resourceType: 'EndUser',
+      resourceId: id,
+      oldValue: { email: user.email },
+      newValue: { email: updated.email },
+    });
+
+    return {
+      success: true,
+      statusCode: 200,
+      data: updated,
+    };
+  }
+
+  async deleteUser(applicationId: string, id: string) {
+    const user = await this.prisma.endUser.findFirst({
+      where: { id, applicationId },
+      include: { application: true }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found in this application');
+    }
+
+    await this.prisma.endUser.delete({
+      where: { id },
+    });
+
+    await this.auditService.createLog({
+      organizationId: user.application.organizationId,
+      action: 'end_user.deleted',
+      resourceType: 'EndUser',
+      resourceId: id,
+      oldValue: { email: user.email },
+    });
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'User deleted successfully',
+    };
+  }
+
+  async bulkImportUsers(applicationId: string, users: EndUserSignupDto[]) {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId }
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    const results = {
+      created: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    for (const userDto of users) {
+      try {
+        await this.signup(applicationId, userDto);
+        results.created++;
+      } catch (error: any) {
+        results.failed++;
+        results.errors.push(`Failed to import ${userDto.email}: ${error.message}`);
+      }
+    }
+
+    await this.auditService.createLog({
+      organizationId: application.organizationId,
+      action: 'bulk_import.completed',
+      resourceType: 'Application',
+      resourceId: applicationId,
+      newValue: { created: results.created, failed: results.failed },
+    });
+
+    return {
+      success: true,
+      statusCode: 200,
+      data: results,
+    };
+  }
+
+  async revokeSession(userId: string, sessionIdToRevoke: string) {
+    const session = await this.sessionsService.findActiveSessionById(sessionIdToRevoke);
+    if (!session || session.endUserId !== userId) {
+      throw new NotFoundException('Session not found');
+    }
+    await this.sessionsService.revokeSession(sessionIdToRevoke, userId);
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Session revoked successfully',
+    };
+  }
+
+  async revokeAllSessions(userId: string, currentSessionId: string) {
+    await this.sessionsService.revokeAllSessions(userId, currentSessionId);
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'All other sessions revoked successfully',
     };
   }
 

@@ -4,14 +4,21 @@ import {
   Get,
   Param,
   Post,
+  Patch,
+  Delete,
   Req,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { EndUsersService } from '../services/end-users.service';
 import { EndUserSignupDto } from '../dto/signup.dto';
 import { EndUserLoginDto } from '../dto/login.dto';
 import { EndUserRefreshTokenDto } from '../dto/refresh-token.dto';
 import { EndUserJwtAuthGuard } from '../guards/end-user-jwt-auth.guard';
+import { ApiKeyAuthGuard } from '../../common/guards/api-key.guard';
+import { SecretKeyGuard } from '../../common/guards/secret-key.guard';
+import { Throttle } from '@nestjs/throttler';
+import { ApiTags, ApiSecurity, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 type RequestWithAuth = {
   headers: {
@@ -23,43 +30,166 @@ type RequestWithAuth = {
     appId: string;
     sessionId: string;
   };
+  application: any;
+  applicationId: string;
 };
 
-@Controller('applications/:appId/auth')
+@ApiTags('End-User Auth & Management')
+@Controller(':applicationSlug')
 export class EndUsersController {
   constructor(private readonly endUsersService: EndUsersService) {}
 
-  @Post('signup')
-  signup(@Param('appId') appId: string, @Body() dto: EndUserSignupDto) {
-    return this.endUsersService.signup(appId, dto);
+  private validateSlug(req: RequestWithAuth, slug: string) {
+    if (req.application.slug !== slug) {
+      throw new ForbiddenException('Invalid application slug for the provided API key');
+    }
   }
 
-  @Post('login')
-  login(@Param('appId') appId: string, @Body() dto: EndUserLoginDto) {
-    return this.endUsersService.login(appId, dto);
+  // --- Server-Side Management APIs (Secret Key) ---
+
+  @ApiOperation({ summary: 'List Application Users' })
+  @ApiSecurity('SecretKey')
+  @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
+  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Get('users')
+  findAllUsers(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.findAllUsers(req.applicationId);
   }
 
-  @Post('refresh')
-  refresh(@Param('appId') appId: string, @Body() dto: EndUserRefreshTokenDto) {
-    return this.endUsersService.refresh(appId, dto);
+  @ApiOperation({ summary: 'Create User (Admin)' })
+  @ApiSecurity('SecretKey')
+  @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
+  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Post('users')
+  createUser(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth, @Body() dto: EndUserSignupDto) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.createUser(req.applicationId, dto);
   }
 
-  @UseGuards(EndUserJwtAuthGuard)
-  @Post('logout')
-  logout(@Req() req: RequestWithAuth) {
+  @ApiOperation({ summary: 'Update User' })
+  @ApiSecurity('SecretKey')
+  @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
+  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Patch('users/:id')
+  updateUser(
+    @Param('applicationSlug') applicationSlug: string,
+    @Param('id') id: string,
+    @Req() req: RequestWithAuth,
+    @Body() dto: { email?: string; password?: string },
+  ) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.updateUser(req.applicationId, id, dto);
+  }
+
+  @ApiOperation({ summary: 'Delete User' })
+  @ApiSecurity('SecretKey')
+  @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
+  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Delete('users/:id')
+  deleteUser(@Param('applicationSlug') applicationSlug: string, @Param('id') id: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.deleteUser(req.applicationId, id);
+  }
+
+  @ApiOperation({ summary: 'Bulk Import Users' })
+  @ApiSecurity('SecretKey')
+  @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
+  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Post('users/bulk')
+  bulkImportUsers(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth, @Body() body: { users: EndUserSignupDto[] }) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.bulkImportUsers(req.applicationId, body.users);
+  }
+
+  // --- Public Auth APIs (Publishable Key) ---
+
+  @ApiOperation({ summary: 'End-User Signup' })
+  @ApiSecurity('PublishableKey')
+  @UseGuards(ApiKeyAuthGuard)
+  @Throttle({ signup: { limit: 5, ttl: 60000 } })
+  @Post('auth/signup')
+  signup(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth, @Body() dto: EndUserSignupDto) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.signup(req.applicationId, dto);
+  }
+
+  @ApiOperation({ summary: 'End-User Login' })
+  @ApiSecurity('PublishableKey')
+  @UseGuards(ApiKeyAuthGuard)
+  @Throttle({ login: { limit: 10, ttl: 60000 } })
+  @Post('auth/login')
+  login(@Param('applicationSlug') applicationSlug: string, @Req() req: any, @Body() dto: EndUserLoginDto) {
+    this.validateSlug(req, applicationSlug);
+    
+    const userAgent = Array.isArray(req.headers['user-agent'])
+      ? req.headers['user-agent'][0]
+      : req.headers['user-agent'];
+
+    return this.endUsersService.login(req.applicationId, dto, {
+      userAgent,
+      ipAddress: req.ip,
+    });
+  }
+
+  @ApiOperation({ summary: 'Refresh End-User Token' })
+  @ApiSecurity('PublishableKey')
+  @UseGuards(ApiKeyAuthGuard)
+  @Throttle({ refresh: { limit: 20, ttl: 60000 } })
+  @Post('auth/refresh')
+  refresh(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth, @Body() dto: EndUserRefreshTokenDto) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.refresh(req.applicationId, dto);
+  }
+
+  @ApiOperation({ summary: 'End-User Logout' })
+  @ApiSecurity('PublishableKey')
+  @ApiBearerAuth('EndUser-JWT')
+  @UseGuards(ApiKeyAuthGuard, EndUserJwtAuthGuard)
+  @Post('auth/logout')
+  logout(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
     const token = req.headers.authorization?.split(' ')[1] ?? '';
     return this.endUsersService.logout(req.user.sessionId, req.user.userId, token);
   }
 
-  @UseGuards(EndUserJwtAuthGuard)
-  @Get('profile')
-  getProfile(@Req() req: RequestWithAuth) {
+  @ApiOperation({ summary: 'Get End-User Profile' })
+  @ApiSecurity('PublishableKey')
+  @ApiBearerAuth('EndUser-JWT')
+  @UseGuards(ApiKeyAuthGuard, EndUserJwtAuthGuard)
+  @Get('auth/profile')
+  getProfile(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
     return this.endUsersService.getProfile(req.user.userId);
   }
 
-  @UseGuards(EndUserJwtAuthGuard)
-  @Get('sessions')
-  getSessions(@Req() req: RequestWithAuth) {
-    return this.endUsersService.getSessions(req.user.userId);
+  @ApiOperation({ summary: 'List End-User Sessions' })
+  @ApiSecurity('PublishableKey')
+  @ApiBearerAuth('EndUser-JWT')
+  @UseGuards(ApiKeyAuthGuard, EndUserJwtAuthGuard)
+  @Get('auth/sessions')
+  getSessions(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.getSessions(req.user.userId, req.user.sessionId);
+  }
+
+  @ApiOperation({ summary: 'Revoke All End-User Sessions' })
+  @ApiSecurity('PublishableKey')
+  @ApiBearerAuth('EndUser-JWT')
+  @UseGuards(ApiKeyAuthGuard, EndUserJwtAuthGuard)
+  @Delete('auth/sessions/all')
+  revokeAllSessions(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.revokeAllSessions(req.user.userId, req.user.sessionId);
+  }
+
+  @ApiOperation({ summary: 'Revoke Specific End-User Session' })
+  @ApiSecurity('PublishableKey')
+  @ApiBearerAuth('EndUser-JWT')
+  @UseGuards(ApiKeyAuthGuard, EndUserJwtAuthGuard)
+  @Delete('auth/sessions/:id')
+  revokeSession(@Param('applicationSlug') applicationSlug: string, @Param('id') id: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.revokeSession(req.user.userId, id);
   }
 }

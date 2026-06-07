@@ -9,11 +9,13 @@ import { EndUsersController } from './controllers/end-users.controller';
 import { EndUserJwtStrategy } from './strategies/end-user-jwt.strategy';
 import { SessionsModule } from '../sessions/sessions.module';
 import { PrismaModule } from '../database/prisma.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     PrismaModule,
     SessionsModule,
+    AuditModule,
     PassportModule.register({ defaultStrategy: 'end-user-jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
