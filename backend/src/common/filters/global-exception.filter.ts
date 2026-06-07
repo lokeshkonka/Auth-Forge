@@ -31,7 +31,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
 
     if (httpStatus === HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(`Unhandled exception: \${(exception as Error).stack}`);
+      this.logger.error(`Unhandled exception: ${(exception as Error).stack}`);
     }
 
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
