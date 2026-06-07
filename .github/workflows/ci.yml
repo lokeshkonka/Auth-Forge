@@ -1,0 +1,44 @@
+name: AuthForge CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: 'backend/package-lock.json'
+
+    - name: Install dependencies
+      run: npm ci
+      working-directory: ./backend
+
+    - name: Lint
+      run: npm run lint
+      working-directory: ./backend
+
+    - name: Generate Prisma Client
+      run: npx prisma generate
+      working-directory: ./backend
+
+    - name: Build
+      run: npm run build
+      working-directory: ./backend
+
+    - name: Run tests
+      run: npm run test
+      working-directory: ./backend
+
+    - name: Build Docker Image
+      run: docker build -t authforge-api backend/
