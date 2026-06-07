@@ -26,7 +26,7 @@ export class ApiKeyAuthGuard implements CanActivate {
     }
 
     // Try to get from cache
-    const cacheKey = `apikey:\${apiKey}`;
+    const cacheKey = `apikey:${apiKey}`;
     const cachedData = await this.cacheManager.get<{ application: any; applicationId: string }>(cacheKey);
 
     if (cachedData) {
@@ -43,7 +43,13 @@ export class ApiKeyAuthGuard implements CanActivate {
 
     let matchedKey: any = null;
     for (const key of apiKeys) {
-      const isMatch = await bcrypt.compare(apiKey, key.keyHash);
+      let isMatch = false;
+      if (apiKey.startsWith('pk_live_')) {
+        isMatch = await bcrypt.compare(apiKey, key.publishableKeyHash);
+      } else if (apiKey.startsWith('sk_live_')) {
+        isMatch = await bcrypt.compare(apiKey, key.secretKeyHash);
+      }
+      
       if (isMatch) {
         matchedKey = key;
         break;

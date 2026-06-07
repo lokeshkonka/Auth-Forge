@@ -19,7 +19,7 @@ export class PermissionGuard implements CanActivate {
     const user = request.user;
     
     // Attempt to resolve organizationId from request (params or body)
-    const organizationId = request.params.organizationId || request.params.id || request.params.orgId || request.body?.organizationId;
+    const organizationId = request.params.organizationId || request.params.orgId || request.body?.organizationId || request.params.id;
 
     if (!user || !user.member) {
       return false; // Not authenticated or member not loaded
@@ -30,15 +30,13 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Check if user is the owner of the organization
-    const isOwner = user.member.ownedOrganizations.some((org: any) => org.id === organizationId);
-    if (isOwner) {
-      return true;
-    }
-
-    // Check member's permissions in this organization
     const membership = user.member.memberships.find((m: any) => m.organizationId === organizationId);
     if (!membership) {
       return false; // Not a member of the organization
+    }
+
+    if (membership.isOwner) {
+      return true;
     }
 
     const userPermissions = new Set<string>();
