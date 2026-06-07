@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -24,6 +23,13 @@ type TokenPayload = {
   sub: string;
   sessionId: string;
   exp: number;
+};
+
+export type GoogleProfile = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  providerUserId: string;
 };
 
 type LoginMeta = {
@@ -160,7 +166,7 @@ export class AuthService {
     }
   }
 
-  async googleLogin(profile: any, meta: LoginMeta = {}) {
+  async googleLogin(profile: GoogleProfile, meta: LoginMeta = {}) {
     if (!profile) {
       throw new UnauthorizedException('No user from google');
     }

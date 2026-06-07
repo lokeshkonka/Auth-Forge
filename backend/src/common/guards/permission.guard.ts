@@ -2,6 +2,28 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
 
+interface PermissionRequest {
+  user?: {
+    member?: {
+      memberships: Array<{
+        organizationId: string;
+        isOwner: boolean;
+        roles: Array<{
+          role: {
+            permissions: Array<{
+              permission: {
+                key: string;
+              };
+            }>;
+          };
+        }>;
+      }>;
+    };
+  };
+  params: Record<string, string>;
+  body: Record<string, any>;
+}
+
 @Injectable()
 export class PermissionGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
@@ -15,7 +37,7 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<PermissionRequest>();
     const user = request.user;
     
     // Attempt to resolve organizationId from request (params or body)
@@ -30,7 +52,7 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Check if user is the owner of the organization
-    const membership = user.member.memberships.find((m: any) => m.organizationId === organizationId);
+    const membership = user.member.memberships.find((m) => m.organizationId === organizationId);
     if (!membership) {
       return false; // Not a member of the organization
     }

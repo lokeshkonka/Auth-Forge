@@ -29,6 +29,22 @@ type RequestWithAuth = {
   };
 };
 
+type GoogleUser = {
+  provider: string;
+  providerUserId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+};
+
+type GoogleRequest = {
+  ip?: string;
+  headers: {
+    'user-agent'?: string | string[];
+  };
+  user: GoogleUser;
+};
+
 @ApiTags('Management Dashboard')
 @Controller('auth')
 export class AuthController {
@@ -73,7 +89,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Google Auth Callback' })
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  async googleAuthRedirect(@Req() req: any) {
+  async googleAuthRedirect(@Req() req: GoogleRequest) {
     const userAgent = Array.isArray(req.headers['user-agent'])
       ? req.headers['user-agent'][0]
       : req.headers['user-agent'];

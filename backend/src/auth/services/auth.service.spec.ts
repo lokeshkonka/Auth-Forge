@@ -9,7 +9,6 @@ import { TokenBlacklistService } from '../../common/services/token-blacklist.ser
 
 describe('AuthService', () => {
   let service: AuthService;
-  let sessionsService: SessionsService;
 
   const mockPrismaService = {
     member: {
@@ -82,6 +81,11 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('revoked successfully');
+      expect(mockSessionsService.revokeAllSessions).toHaveBeenCalledWith(memberId, currentSessionId);
+    });
+  });
+});
+ked successfully');
       expect(mockSessionsService.revokeAllSessions).toHaveBeenCalledWith(memberId, currentSessionId);
     });
   });

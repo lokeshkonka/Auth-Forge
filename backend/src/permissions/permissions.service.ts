@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
+export interface Permission {
+  id: string;
+  key: string;
+  name: string;
+  category: string;
+  description: string | null;
+  sortOrder: number;
+}
+
 @Injectable()
 export class PermissionsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -8,7 +17,7 @@ export class PermissionsService {
   async findAll() {
     const permissions = await this.prisma.permission.findMany({
       orderBy: { sortOrder: 'asc' },
-    });
+    }) as Permission[];
 
     const categories = permissions.reduce((acc, perm) => {
       const category = perm.category;
@@ -23,7 +32,7 @@ export class PermissionsService {
         sortOrder: perm.sortOrder,
       });
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, Partial<Permission>[]>);
 
     return {
       success: true,
@@ -74,19 +83,19 @@ export class PermissionsService {
     // Check if user is organization owner via membership flag
     const isOwner = membership.isOwner;
     
-    let permissions;
+    let permissions: Permission[];
     
     if (isOwner) {
       // Owners see all permissions
       permissions = await this.prisma.permission.findMany({
         orderBy: { sortOrder: 'asc' },
-      });
+      }) as Permission[];
     } else {
       // Members see only their assigned permissions
-      const permissionMap = new Map<string, any>();
+      const permissionMap = new Map<string, Permission>();
       for (const memberRole of membership.roles) {
         for (const rp of memberRole.role.permissions) {
-          permissionMap.set(rp.permission.id, rp.permission);
+          permissionMap.set(rp.permission.id, rp.permission as Permission);
         }
       }
       permissions = Array.from(permissionMap.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -105,7 +114,7 @@ export class PermissionsService {
         sortOrder: perm.sortOrder,
       });
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, Partial<Permission>[]>);
 
     return {
       success: true,
