@@ -25,6 +25,58 @@ export class OrganizationsService {
     return this.membersService.findMembershipsByMemberId(memberId);
   }
 
+  async update(organizationId: string, dto: { name?: string }, actorId?: string) {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    const updated = await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: dto
+    });
+
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'organization.updated',
+      resourceType: 'Organization',
+      resourceId: organizationId,
+      oldValue: { name: organization.name },
+      newValue: dto,
+    });
+
+    return updated;
+  }
+
+  async remove(organizationId: string, actorId?: string) {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    const deleted = await this.prisma.organization.delete({
+      where: { id: organizationId }
+    });
+
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'organization.deleted',
+      resourceType: 'Organization',
+      resourceId: organizationId,
+      oldValue: { name: organization.name, slug: organization.slug },
+    });
+
+    return deleted;
+  }
+
   async inviteMember(
     organizationId: string,
     inviterMemberId: string,
@@ -100,8 +152,8 @@ export class OrganizationsService {
     await this.auditService.createLog({
       organizationId,
       actorId: inviterMemberId,
-      action: 'invitation.created',
-      resourceType: 'Invitation',
+      action: 'member.invited',
+      resourceType: 'Member',
       resourceId: invitation.id,
       newValue: { email, roleId: dto.roleId },
     });
@@ -115,7 +167,7 @@ export class OrganizationsService {
   }
 
   async listMembers(organizationId: string) {
-    return this.prisma.membership.findMany({
+    const memberships = await this.prisma.membership.findMany({
       where: { organizationId },
       include: {
         member: {
@@ -133,6 +185,27 @@ export class OrganizationsService {
         }
       }
     });
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Members fetched successfully',
+      data: memberships.map(m => ({
+        id: m.id,
+        memberId: m.memberId,
+        email: m.member.email,
+        firstName: m.member.firstName,
+        lastName: m.member.lastName,
+        status: m.status,
+        isOwner: m.isOwner,
+        createdAt: m.createdAt,
+        roles: m.roles.map(r => ({
+          id: r.role.id,
+          name: r.role.name,
+          isSystemRole: r.role.isSystemRole
+        }))
+      }))
+    };
   }
 
   async getMemberDetails(organizationId: string, membershipId: string) {
@@ -184,7 +257,7 @@ export class OrganizationsService {
     await this.auditService.createLog({
       organizationId,
       actorId,
-      action: 'membership.status_updated',
+      action: dto.status === 'SUSPENDED' ? 'member.suspended' : 'member.status_updated',
       resourceType: 'Membership',
       resourceId: membershipId,
       oldValue: { status: membership.status },
@@ -196,15 +269,14 @@ export class OrganizationsService {
 
   async removeMember(organizationId: string, membershipId: string, actorId?: string) {
     const membership = await this.prisma.membership.findFirst({
-      where: { id: membershipId, organizationId },
-      include: { organization: true }
+      where: { id: membershipId, organizationId }
     });
 
     if (!membership) {
       throw new NotFoundException('Membership not found');
     }
 
-    if (membership.organization.ownerId === membership.memberId) {
+    if (membership.isOwner) {
       throw new ConflictException('Cannot remove the organization owner');
     }
 
@@ -242,6 +314,10 @@ export class OrganizationsService {
       throw new NotFoundException('Role not found in this organization');
     }
 
+    if (role.name === 'Owner' && role.isSystemRole) {
+      throw new ForbiddenException('The Owner role cannot be manually assigned');
+    }
+
     const assignment = await this.prisma.memberRole.upsert({
       where: {
         membershipId_roleId: {
@@ -275,6 +351,14 @@ export class OrganizationsService {
 
     if (!membership) {
       throw new NotFoundException('Membership not found');
+    }
+
+    const role = await this.prisma.role.findFirst({
+      where: { id: roleId, organizationId }
+    });
+
+    if (role && role.name === 'Owner' && role.isSystemRole) {
+      throw new ForbiddenException('The Owner role cannot be manually removed');
     }
 
     const result = await this.prisma.memberRole.deleteMany({
