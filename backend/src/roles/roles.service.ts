@@ -26,7 +26,7 @@ export class RolesService {
 
       for (const rp of requestedPermissions) {
         if (!actorPermissions.includes(rp.key)) {
-          throw new ForbiddenException(`You cannot assign permission \${rp.key} as you do not have it yourself`);
+          throw new ForbiddenException(`You cannot assign permission ${rp.key} as you do not have it yourself`);
         }
       }
     }
@@ -41,7 +41,7 @@ export class RolesService {
     });
 
     if (existingRole) {
-      throw new ConflictException(`Role with name \${name} already exists in this organization`);
+      throw new ConflictException(`Role with name ${name} already exists in this organization`);
     }
 
     const role = await this.prisma.role.create({
@@ -102,7 +102,7 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new NotFoundException(`Role with ID \${id} not found`);
+      throw new NotFoundException(`Role with ID ${id} not found`);
     }
 
     return role;
@@ -121,7 +121,7 @@ export class RolesService {
 
       for (const rp of requestedPermissions) {
         if (!actorPermissions.includes(rp.key)) {
-          throw new ForbiddenException(`You cannot assign permission \${rp.key} as you do not have it yourself`);
+          throw new ForbiddenException(`You cannot assign permission ${rp.key} as you do not have it yourself`);
         }
       }
     }
@@ -143,7 +143,7 @@ export class RolesService {
       });
 
       if (existingRole) {
-        throw new ConflictException(`Role with name \${name} already exists in this organization`);
+        throw new ConflictException(`Role with name ${name} already exists in this organization`);
       }
     }
 
