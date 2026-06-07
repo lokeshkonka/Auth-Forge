@@ -81,9 +81,11 @@ export class InvitationsService {
           memberId,
           organizationId: invitation.organizationId,
           roles: {
-            create: {
-              roleId: invitation.roleId,
-            }
+            create: [
+              {
+                roleId: invitation.roleId,
+              }
+            ]
           }
         }
       }),
@@ -99,9 +101,9 @@ export class InvitationsService {
     await this.auditService.createLog({
       organizationId: invitation.organizationId,
       actorId: memberId,
-      action: 'invitation.accepted',
-      resourceType: 'Invitation',
-      resourceId: invitation.id,
+      action: 'member.accepted',
+      resourceType: 'Member',
+      resourceId: memberId,
       newValue: { membershipId: membership.id },
     });
 
