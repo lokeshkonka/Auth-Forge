@@ -23,7 +23,7 @@ export class ApplicationsService {
     });
 
     if (existing) {
-      throw new ConflictException(`Application with slug \${slug} already exists in this organization`);
+      throw new ConflictException(`Application with slug ${slug} already exists in this organization`);
     }
 
     const application = await this.prisma.application.create({
@@ -59,7 +59,7 @@ export class ApplicationsService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Application with ID \${id} not found`);
+      throw new NotFoundException(`Application with ID ${id} not found`);
     }
 
     return application;

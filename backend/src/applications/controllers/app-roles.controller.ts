@@ -5,6 +5,7 @@ import { AssignAppRoleDto } from '../dto/assign-app-role.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam } from '@nestjs/swagger';
 
 type RequestWithAuth = {
   user: {
@@ -13,13 +14,18 @@ type RequestWithAuth = {
   };
 };
 
+@ApiTags('Management Dashboard')
+@ApiBearerAuth('Member-JWT')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('organizations/:orgId/applications/:appId/roles')
+@ApiParam({ name: 'orgId', description: 'Organization ID' })
+@ApiParam({ name: 'appId', description: 'Application ID' })
 export class AppRolesController {
   constructor(private readonly appRolesService: AppRolesService) {}
 
+  @ApiOperation({ summary: 'Create Application Role' })
   @Post()
-  @RequirePermissions('app_role.create')
+  @RequirePermissions('app_role.created')
   create(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -29,20 +35,25 @@ export class AppRolesController {
     return this.appRolesService.create(appId, dto, orgId, req.user.sub);
   }
 
+  @ApiOperation({ summary: 'List Application Roles' })
   @Get()
-  @RequirePermissions('app_role.read')
+  @RequirePermissions('app_role.created')
   findAll(@Param('appId') appId: string) {
     return this.appRolesService.findAll(appId);
   }
 
+  @ApiOperation({ summary: 'Get Application Role Details' })
   @Get(':id')
-  @RequirePermissions('app_role.read')
+  @ApiParam({ name: 'id', description: 'Role ID' })
+  @RequirePermissions('app_role.created')
   findOne(@Param('appId') appId: string, @Param('id') id: string) {
     return this.appRolesService.findOne(appId, id);
   }
 
+  @ApiOperation({ summary: 'Update Application Role' })
   @Patch(':id')
-  @RequirePermissions('app_role.update')
+  @ApiParam({ name: 'id', description: 'Role ID' })
+  @RequirePermissions('app_role.updated')
   update(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -53,8 +64,10 @@ export class AppRolesController {
     return this.appRolesService.update(appId, id, dto, orgId, req.user.sub);
   }
 
+  @ApiOperation({ summary: 'Delete Application Role' })
   @Delete(':id')
-  @RequirePermissions('app_role.delete')
+  @ApiParam({ name: 'id', description: 'Role ID' })
+  @RequirePermissions('app_role.deleted')
   remove(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -64,8 +77,10 @@ export class AppRolesController {
     return this.appRolesService.remove(appId, id, orgId, req.user.sub);
   }
 
+  @ApiOperation({ summary: 'Assign Application Role to User' })
   @Post('assignments/:userId')
-  @RequirePermissions('app_role.assign')
+  @ApiParam({ name: 'userId', description: 'End-User ID' })
+  @RequirePermissions('app_role.assigned')
   assignToUser(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -76,8 +91,11 @@ export class AppRolesController {
     return this.appRolesService.assignToUser(appId, userId, dto.roleId, orgId, req.user.sub);
   }
 
+  @ApiOperation({ summary: 'Unassign Application Role from User' })
   @Delete('assignments/:userId/:roleId')
-  @RequirePermissions('app_role.assign')
+  @ApiParam({ name: 'userId', description: 'End-User ID' })
+  @ApiParam({ name: 'roleId', description: 'Role ID' })
+  @RequirePermissions('app_role.unassigned')
   unassignFromUser(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,

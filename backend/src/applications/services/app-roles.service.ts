@@ -11,7 +11,7 @@ export class AppRolesService {
   ) {}
 
   async create(appId: string, dto: CreateAppRoleDto, organizationId: string, actorId?: string) {
-    const { name, description, permissionIds } = dto;
+    const { name, description } = dto;
 
     const existing = await this.prisma.applicationRole.findUnique({
       where: {
@@ -23,7 +23,7 @@ export class AppRolesService {
     });
 
     if (existing) {
-      throw new ConflictException(`Role with name \${name} already exists in this application`);
+      throw new ConflictException(`Role with name ${name} already exists in this application`);
     }
 
     const role = await this.prisma.applicationRole.create({
@@ -31,11 +31,6 @@ export class AppRolesService {
         applicationId: appId,
         name,
         description,
-        permissions: permissionIds ? {
-          create: permissionIds.map(permissionId => ({
-            permission: { connect: { id: permissionId } }
-          }))
-        } : undefined,
       },
     });
 
@@ -54,30 +49,16 @@ export class AppRolesService {
   async findAll(appId: string) {
     return this.prisma.applicationRole.findMany({
       where: { applicationId: appId },
-      include: {
-        permissions: {
-          include: {
-            permission: true,
-          },
-        },
-      },
     });
   }
 
   async findOne(appId: string, id: string) {
     const role = await this.prisma.applicationRole.findFirst({
       where: { id, applicationId: appId },
-      include: {
-        permissions: {
-          include: {
-            permission: true,
-          },
-        },
-      },
     });
 
     if (!role) {
-      throw new NotFoundException(`Role with ID \${id} not found`);
+      throw new NotFoundException(`Role with ID ${id} not found`);
     }
 
     return role;
@@ -91,14 +72,6 @@ export class AppRolesService {
       data: {
         name: dto.name,
         description: dto.description,
-        ...(dto.permissionIds && {
-          permissions: {
-            deleteMany: {},
-            create: dto.permissionIds.map(permissionId => ({
-              permission: { connect: { id: permissionId } }
-            }))
-          }
-        })
       },
     });
 
@@ -164,7 +137,7 @@ export class AppRolesService {
       actorId,
       action: 'app_role.assigned',
       resourceType: 'EndUserRoleAssignment',
-      resourceId: `\${userId}_\${roleId}`,
+      resourceId: `${userId}_${roleId}`,
       newValue: { userId, roleId },
     });
 
@@ -186,7 +159,7 @@ export class AppRolesService {
       actorId,
       action: 'app_role.unassigned',
       resourceType: 'EndUserRoleAssignment',
-      resourceId: `\${userId}_\${roleId}`,
+      resourceId: `${userId}_${roleId}`,
       oldValue: { userId, roleId },
     });
 
