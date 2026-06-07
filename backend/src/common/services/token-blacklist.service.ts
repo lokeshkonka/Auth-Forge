@@ -7,11 +7,11 @@ export class TokenBlacklistService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
   async blacklistToken(token: string, expiresInSeconds: number): Promise<void> {
-    await this.cacheManager.set(`blacklist:\${token}`, true, expiresInSeconds * 1000);
+    await this.cacheManager.set(`blacklist:${token}`, true, expiresInSeconds * 1000);
   }
 
   async isTokenBlacklisted(token: string): Promise<boolean> {
-    const isBlacklisted = await this.cacheManager.get(`blacklist:\${token}`);
+    const isBlacklisted = await this.cacheManager.get(`blacklist:${token}`);
     return !!isBlacklisted;
   }
 }
