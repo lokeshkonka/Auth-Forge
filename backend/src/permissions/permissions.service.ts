@@ -10,28 +10,118 @@ export class PermissionsService {
       orderBy: { sortOrder: 'asc' },
     });
 
-    const grouped = permissions.reduce((acc, perm) => {
+    const categories = permissions.reduce((acc, perm) => {
       const category = perm.category;
       if (!acc[category]) {
         acc[category] = [];
       }
-      acc[category].push(perm);
+      acc[category].push({
+        id: perm.id,
+        key: perm.key,
+        name: perm.name,
+        description: perm.description,
+        sortOrder: perm.sortOrder,
+      });
       return acc;
     }, {} as Record<string, any[]>);
 
-    return grouped;
+    return {
+      success: true,
+      statusCode: 200,
+      data: {
+        total: permissions.length,
+        list: permissions.map(p => ({
+          id: p.id,
+          key: p.key,
+          name: p.name,
+          category: p.category,
+          description: p.description
+        })),
+        categories
+      }
+    };
   }
 
-  async findByOrganization(organizationId: string) {
-    // For now, all permissions are global, but we check if the organization exists
-    const org = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
+  async findByOrganization(organizationId: string, memberId: string) {
+    const membership = await this.prisma.membership.findUnique({
+      where: {
+        memberId_organizationId: {
+          memberId,
+          organizationId,
+        },
+      },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    if (!org) {
-      throw new Error('Organization not found');
+    if (!membership) {
+      throw new Error('Membership not found');
     }
 
-    return this.findAll();
+    // Check if user is organization owner via membership flag
+    const isOwner = membership.isOwner;
+    
+    let permissions;
+    
+    if (isOwner) {
+      // Owners see all permissions
+      permissions = await this.prisma.permission.findMany({
+        orderBy: { sortOrder: 'asc' },
+      });
+    } else {
+      // Members see only their assigned permissions
+      const permissionMap = new Map<string, any>();
+      for (const memberRole of membership.roles) {
+        for (const rp of memberRole.role.permissions) {
+          permissionMap.set(rp.permission.id, rp.permission);
+        }
+      }
+      permissions = Array.from(permissionMap.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
+
+    const categories = permissions.reduce((acc, perm) => {
+      const category = perm.category;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push({
+        id: perm.id,
+        key: perm.key,
+        name: perm.name,
+        description: perm.description,
+        sortOrder: perm.sortOrder,
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    return {
+      success: true,
+      statusCode: 200,
+      data: {
+        total: permissions.length,
+        isOwner,
+        list: permissions.map(p => ({
+          id: p.id,
+          key: p.key,
+          name: p.name,
+          category: p.category,
+          description: p.description
+        })),
+        categories
+      }
+    };
   }
 }
