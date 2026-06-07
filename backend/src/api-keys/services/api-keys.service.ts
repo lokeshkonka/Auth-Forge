@@ -28,32 +28,40 @@ export class ApiKeysService {
     });
 
     if (existingKey) {
-      throw new ConflictException(`API Key with name \${name} already exists for this application`);
+      throw new ConflictException(`API Key with name ${name} already exists for this application`);
     }
 
-    const rawKey = `ak_\${crypto.randomBytes(24).toString('hex')}`;
-    const keyHash = await bcrypt.hash(rawKey, 12);
+    const publishableKey = `pk_live_${crypto.randomBytes(24).toString('hex')}`;
+    const secretKey = `sk_live_${crypto.randomBytes(24).toString('hex')}`;
+    const publishableKeyHash = await bcrypt.hash(publishableKey, 12);
+    const secretKeyHash = await bcrypt.hash(secretKey, 12);
 
     const apiKey = await this.prisma.apiKey.create({
       data: {
         applicationId,
         name,
-        keyHash,
+        publishableKeyHash,
+        secretKeyHash,
       },
     });
 
     await this.auditService.createLog({
       organizationId,
       actorId,
-      action: 'api_key.created',
+      action: 'apikey.created',
       resourceType: 'ApiKey',
       resourceId: apiKey.id,
       newValue: { name },
     });
 
     return {
-      ...apiKey,
-      rawKey, // Return raw key only once
+      id: apiKey.id,
+      applicationId: apiKey.applicationId,
+      name: apiKey.name,
+      createdAt: apiKey.createdAt,
+      expiresAt: apiKey.expiresAt,
+      publishableKey, // Return raw key only once
+      secretKey,      // Return raw key only once
     };
   }
 
@@ -100,7 +108,7 @@ export class ApiKeysService {
     await this.auditService.createLog({
       organizationId,
       actorId,
-      action: 'api_key.revoked',
+      action: 'apikey.revoked',
       resourceType: 'ApiKey',
       resourceId: id,
       oldValue: { name: apiKey.name },
