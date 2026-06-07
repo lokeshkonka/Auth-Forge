@@ -20,6 +20,23 @@ export interface AuditLogOptions {
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private filterSensitiveData(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+    
+    const sensitiveKeys = ['password', 'passwordHash', 'jwt', 'token', 'refreshToken', 'accessToken', 'apiKey', 'secretKey', 'keyHash', 'secretKeyHash'];
+    const filtered = { ...data };
+
+    for (const key of Object.keys(filtered)) {
+      if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk.toLowerCase()))) {
+        filtered[key] = '[REDACTED]';
+      } else if (typeof filtered[key] === 'object') {
+        filtered[key] = this.filterSensitiveData(filtered[key]);
+      }
+    }
+
+    return filtered;
+  }
+
   async createLog(options: AuditLogOptions) {
     return this.prisma.auditLog.create({
       data: {
@@ -28,8 +45,8 @@ export class AuditService {
         action: options.action,
         resourceType: options.resourceType,
         resourceId: options.resourceId,
-        oldValue: options.oldValue,
-        newValue: options.newValue,
+        oldValue: this.filterSensitiveData(options.oldValue),
+        newValue: this.filterSensitiveData(options.newValue),
         ipAddress: options.ipAddress,
         userAgent: options.userAgent,
         status: options.status ?? AuditStatus.SUCCESS,
@@ -39,10 +56,16 @@ export class AuditService {
   }
 
   async findByOrganization(organizationId: string, limit = 50, offset = 0) {
+    const safeLimit = Math.min(limit, 100);
     return this.prisma.auditLog.findMany({
       where: { organizationId },
+      include: {
+        organization: {
+          select: { name: true, slug: true }
+        }
+      },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: safeLimit,
       skip: offset,
     });
   }
