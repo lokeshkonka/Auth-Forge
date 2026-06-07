@@ -12,6 +12,7 @@ export class MembersService {
       select: {
         id: true,
         organizationId: true,
+        isOwner: true,
         createdAt: true,
         organization: {
           select: {
@@ -53,17 +54,6 @@ export class MembersService {
   }
 
   async getMemberPermissions(memberId: string, organizationId: string): Promise<string[]> {
-    // Check if user is organization owner
-    const organization = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { ownerId: true },
-    });
-
-    if (organization?.ownerId === memberId) {
-      const allPermissions = await this.prisma.permission.findMany({ select: { key: true } });
-      return allPermissions.map(p => p.key);
-    }
-
     const membership = await this.prisma.membership.findUnique({
       where: {
         memberId_organizationId: {
@@ -89,6 +79,12 @@ export class MembersService {
     });
 
     if (!membership) return [];
+
+    // Check if user is organization owner
+    if (membership.isOwner) {
+      const allPermissions = await this.prisma.permission.findMany({ select: { key: true } });
+      return allPermissions.map(p => p.key);
+    }
 
     const permissions = new Set<string>();
     for (const memberRole of membership.roles) {
