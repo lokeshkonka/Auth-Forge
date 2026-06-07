@@ -1,4 +1,27 @@
 services:
+  api:
+    build: .
+    container_name: authforge-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/authforge?schema=public
+      - JWT_ACCESS_SECRET=your_jwt_access_secret
+      - JWT_REFRESH_SECRET=your_jwt_refresh_secret
+      - JWT_EXPIRES_IN=30d
+      - JWT_REFRESH_EXPIRES_IN=90d
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GOOGLE_CLIENT_ID=MY_GG_ID 
+      - GOOGLE_CLIENT_SECRET=MY_GG_SECRET
+      - GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   postgres:
     image: postgres:17
 
