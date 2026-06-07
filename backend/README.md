@@ -27,72 +27,97 @@
 
 ## Project setup
 
+ # AuthForge Backend
+
+The core engine of AuthForge, a high-performance, multi-tenant Identity & Access Management (IAM) platform. Built with **NestJS**, **Prisma (PostgreSQL)**, and **Redis**.
+
+## 🚀 Key Features
+
+- **Multi-Tenant Architecture**: Isolate data between organizations and applications seamlessly.
+- **Smart Ownership**: Membership-level `isOwner` flag for instant, robust administrative access.
+- **Simplified Application Roles**: Create and assign roles (e.g., "Agent", "Banker") to end-users without complex permission mapping.
+- **Secure API Key Management**: Hash-protected Publishable and Secret keys for client and server integrations.
+- **Automated Seeding**: Permissions are automatically seeded on container startup via Docker.
+- **Comprehensive Swagger UI**: Fully documented API with interactive testing.
+- **Immuntable Audit Logs**: Track every sensitive action within your organization.
+
+## 🛠 Tech Stack
+
+- **Framework**: [NestJS](https://nestjs.com/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/)
+- **Caching & Sessions**: [Redis](https://redis.io/)
+- **Validation**: [class-validator](https://github.com/typestack/class-validator)
+- **Documentation**: [Swagger (OpenAPI)](https://swagger.io/)
+
+## 🚦 Getting Started
+
+### Prerequisites
+- Node.js (v22+)
+- Docker & Docker Compose
+
+### Local Development Setup
+
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Environment Setup**:
+   Copy `.env.example` to `.env` and update the values.
+
+3. **Database Migration & Seeding**:
+   ```bash
+   npx prisma migrate dev
+   npx prisma db seed
+   ```
+
+4. **Run the Server**:
+   ```bash
+   npm run start:dev
+   ```
+
+### Docker Usage
+The backend is configured to handle migrations and permission seeding automatically:
 ```bash
-$ npm install
+docker-compose up -d --build
 ```
 
-## Compile and run the project
+## 📚 API Documentation
 
-```bash
-# development
-$ npm run start
+Once the server is running, access the interactive Swagger documentation at:
+`http://localhost:3000/docs`
 
-# watch mode
-$ npm run start:dev
+### Permission Catalog
+Management permissions (for organization members) are categorized by:
+- `Authentication`: Signup, Login, Logout
+- `Organizations`: Created, Updated, Deleted
+- `Members`: Invited, Accepted, Suspended, Removed
+- `Roles`: Created, Updated, Deleted, Assigned
+- `Applications`: Created, Updated, Deleted
+- `API Keys`: Created, Revoked
+- `Application Roles`: Created, Updated, Deleted, Assigned, Unassigned
+- `Audit Logs`: Read
+- `Permissions`: Read
+- `Sessions`: Revoked
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
+## 🧪 Testing
 
 ```bash
 # unit tests
-$ npm run test
+npm run test
 
 # e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run test:e2e
 ```
 
-## Deployment
+## 📂 Project Structure
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- `src/api-keys`: API Key lifecycle management.
+- `src/applications`: Multi-tenant application and role management.
+- `src/auth`: Member authentication and Google OAuth.
+- `src/common`: Guards, decorators, filters, and shared constants.
+- `src/end-users`: Application-specific user authentication and roles.
+- `src/organizations`: Team management and invitation system.
+- `src/sessions`: Member and End-user session tracking.
+- `src/audit`: Immutable logging system.
