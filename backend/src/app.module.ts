@@ -13,9 +13,14 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
 import { EndUsersModule } from './end-users/end-users.module';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { LoggerModule } from 'nestjs-pino';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { createKeyv } from '@keyv/redis';
+
+import { RedisModule } from './database/redis.module';
 
 @Module({
   imports: [
@@ -32,6 +37,7 @@ import { LoggerModule } from 'nestjs-pino';
     CommonModule,
     HealthModule,
     PrismaModule,
+    RedisModule,
     LoggerModule.forRoot({
       pinoHttp: {
         transport: process.env.NODE_ENV !== 'production'
@@ -39,16 +45,35 @@ import { LoggerModule } from 'nestjs-pino';
           : undefined,
       },
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
-    CacheModule.register({
+    ThrottlerModule.forRootAsync({
+      useFactory: () => ({
+        storage: new ThrottlerStorageRedisService(`redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`),
+        throttlers: [
+          { name: 'global', ttl: 60000, limit: 100 },
+          { name: 'signup', ttl: 60000, limit: 5 },
+          { name: 'login', ttl: 60000, limit: 10 },
+          { name: 'refresh', ttl: 60000, limit: 20 },
+          { name: 'secret', ttl: 60000, limit: 100 },
+        ],
+      }),
+    }),
+    CacheModule.registerAsync({
       isGlobal: true,
+      useFactory: () => {
+        return {
+          stores: [createKeyv(`redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`)],
+        };
+      },
     }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
