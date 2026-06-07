@@ -97,6 +97,7 @@ export class AuthService {
           data: {
             memberId: member.id,
             organizationId: organization.id,
+            isOwner: true,
           },
         });
 
@@ -116,15 +117,6 @@ export class AuthService {
           }
         });
 
-        // 6. Assign all permissions to this Owner Role
-        const allPermissions = await tx.permission.findMany();
-        await tx.rolePermission.createMany({
-          data: allPermissions.map(perm => ({
-            roleId: ownerRole.id,
-            permissionId: perm.id
-          }))
-        });
-
         // 7. Assign Owner Role to the Member's Membership
         await tx.memberRole.create({
           data: {
@@ -138,7 +130,7 @@ export class AuthService {
           data: {
             organizationId: organization.id,
             actorId: member.id,
-            action: 'organization.created',
+            action: 'customer.signup',
             resourceType: 'Organization',
             resourceId: organization.id,
             newValue: { name: organization.name, slug: organization.slug },
@@ -219,7 +211,7 @@ export class AuthService {
 
     const accessToken = await this.issueAccessToken(member.id, sessionId);
 
-    await this.logMemberEvent(member.id, 'member.login.google', 'Session', sessionId, meta);
+    await this.logMemberEvent(member.id, 'google.login', 'Session', sessionId, meta);
 
     return {
       success: true,
@@ -277,7 +269,7 @@ export class AuthService {
 
     const accessToken = await this.issueAccessToken(member.id, sessionId);
 
-    await this.logMemberEvent(member.id, 'member.login', 'Session', sessionId, meta);
+    await this.logMemberEvent(member.id, 'customer.login', 'Session', sessionId, meta);
 
     return {
       success: true,
@@ -492,7 +484,7 @@ export class AuthService {
       console.error('Failed to blacklist token:', err);
     }
 
-    await this.logMemberEvent(session.memberId, 'member.logout', 'Session', sessionId);
+    await this.logMemberEvent(session.memberId, 'customer.logout', 'Session', sessionId);
 
     return {
       success: true,
@@ -509,9 +501,24 @@ export class AuthService {
       statusCode: 200,
       message: 'Sessions fetched successfully',
       data: sessions.map((session) => ({
-        ...session,
+        id: session.id,
+        userAgent: session.userAgent,
+        ipAddress: session.ipAddress,
+        expiresAt: session.expiresAt,
+        createdAt: session.createdAt,
+        lastUsedAt: session.lastUsedAt,
         current: session.id === currentSessionId,
       })),
+    };
+  }
+
+  async revokeAllSessions(memberId: string, currentSessionId: string) {
+    await this.sessionsService.revokeAllSessions(memberId, currentSessionId);
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'All other sessions revoked successfully',
     };
   }
 
@@ -520,12 +527,8 @@ export class AuthService {
     currentSessionId: string,
     sessionIdToDelete: string,
   ) {
-    if (currentSessionId === sessionIdToDelete) {
-      throw new BadRequestException({
-        statusCode: 400,
-        error: 'CANNOT_DELETE_CURRENT_SESSION',
-        message: 'You cannot delete your current active session',
-      });
+    if (sessionIdToDelete === 'all') {
+      return this.revokeAllSessions(memberId, currentSessionId);
     }
 
     const session = await this.sessionsService.findSessionById(

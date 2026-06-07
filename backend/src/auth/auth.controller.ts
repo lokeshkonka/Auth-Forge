@@ -8,6 +8,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -28,20 +29,24 @@ type RequestWithAuth = {
   };
 };
 
+@ApiTags('Management Dashboard')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'System Health Check' })
   @Get('health')
   health() {
     return { status: 'ok' };
   }
 
+  @ApiOperation({ summary: 'User Signup' })
   @Post('signup')
   signup(@Body() dto: SignupDto) {
     return this.authService.signup(dto);
   }
 
+  @ApiOperation({ summary: 'User Login' })
   @Post('login')
   login(@Body() dto: LoginDto, @Req() req: RequestWithAuth) {
     const userAgent = Array.isArray(req.headers['user-agent'])
@@ -54,15 +59,18 @@ export class AuthController {
     });
   }
 
+  @ApiOperation({ summary: 'Refresh Token' })
   @Post('refresh')
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto);
   }
 
+  @ApiOperation({ summary: 'Google Auth' })
   @UseGuards(GoogleAuthGuard)
   @Get('google')
   async googleAuth() {}
 
+  @ApiOperation({ summary: 'Google Auth Callback' })
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
   async googleAuthRedirect(@Req() req: any) {
@@ -76,18 +84,24 @@ export class AuthController {
     });
   }
 
+  @ApiOperation({ summary: 'Get Profile' })
+  @ApiBearerAuth('Member-JWT')
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Req() req: RequestWithAuth) {
     return this.authService.getProfile(req.user.sub, req.user.sessionId);
   }
 
+  @ApiOperation({ summary: 'List Active Sessions' })
+  @ApiBearerAuth('Member-JWT')
   @UseGuards(JwtAuthGuard)
   @Get('sessions')
   getSessions(@Req() req: RequestWithAuth) {
     return this.authService.getSessions(req.user.sub, req.user.sessionId);
   }
 
+  @ApiOperation({ summary: 'Logout' })
+  @ApiBearerAuth('Member-JWT')
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Req() req: RequestWithAuth) {
@@ -95,6 +109,16 @@ export class AuthController {
     return this.authService.logout(req.user.sessionId, token);
   }
 
+  @ApiOperation({ summary: 'Revoke All Sessions' })
+  @ApiBearerAuth('Member-JWT')
+  @UseGuards(JwtAuthGuard)
+  @Delete('sessions/all')
+  revokeAllSessions(@Req() req: RequestWithAuth) {
+    return this.authService.revokeAllSessions(req.user.sub, req.user.sessionId);
+  }
+
+  @ApiOperation({ summary: 'Revoke Specific Session' })
+  @ApiBearerAuth('Member-JWT')
   @UseGuards(JwtAuthGuard)
   @Delete('sessions/:id')
   deleteSession(@Param('id') sessionId: string, @Req() req: RequestWithAuth) {
