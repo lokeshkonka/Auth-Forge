@@ -1,11 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/services/audit.service';
 
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class SessionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
+
+  private async logSessionEvent(memberId: string, action: string, resourceId?: string) {
+    const memberships = await this.prisma.membership.findMany({
+      where: { memberId },
+    });
+
+    for (const membership of memberships) {
+      await this.auditService.createLog({
+        organizationId: membership.organizationId,
+        actorId: memberId,
+        action,
+        resourceType: 'Session',
+        resourceId,
+      });
+    }
+  }
 
   createSession(
     id: string,
@@ -87,8 +107,8 @@ export class SessionsService {
     });
   }
 
-  revokeSession(sessionId: string, memberId: string) {
-    return this.prisma.memberSession.updateMany({
+  async revokeSession(sessionId: string, memberId: string) {
+    const result = await this.prisma.memberSession.updateMany({
       where: {
         id: sessionId,
         memberId,
@@ -97,10 +117,16 @@ export class SessionsService {
         revokedAt: new Date(),
       }
     });
+
+    if (result.count > 0) {
+      await this.logSessionEvent(memberId, 'session.revoked', sessionId);
+    }
+
+    return result;
   }
 
-  revokeAllSessions(memberId: string, excludeSessionId?: string) {
-    return this.prisma.memberSession.updateMany({
+  async revokeAllSessions(memberId: string, excludeSessionId?: string) {
+    const result = await this.prisma.memberSession.updateMany({
       where: {
         memberId,
         ...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
@@ -110,6 +136,12 @@ export class SessionsService {
         revokedAt: new Date(),
       }
     });
+
+    if (result.count > 0) {
+      await this.logSessionEvent(memberId, 'session.revoked_all');
+    }
+
+    return result;
   }
 
   deleteMemberSession(sessionId: string, memberId: string) {

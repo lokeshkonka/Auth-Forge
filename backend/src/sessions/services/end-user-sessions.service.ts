@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class EndUserSessionsService {
@@ -11,12 +11,16 @@ export class EndUserSessionsService {
     id: string,
     endUserId: string,
     refreshTokenHash: string,
+    userAgent?: string,
+    ipAddress?: string,
   ) {
     return this.prisma.endUserSession.create({
       data: {
         id,
         endUserId,
         refreshTokenHash,
+        userAgent,
+        ipAddress,
         expiresAt: new Date(Date.now() + SESSION_TTL_MS),
       },
     });
@@ -68,6 +72,14 @@ export class EndUserSessionsService {
           gt: new Date(),
         },
         revokedAt: null,
+      },
+      select: {
+        id: true,
+        userAgent: true,
+        ipAddress: true,
+        expiresAt: true,
+        createdAt: true,
+        lastUsedAt: true,
       },
       orderBy: {
         createdAt: 'desc',
