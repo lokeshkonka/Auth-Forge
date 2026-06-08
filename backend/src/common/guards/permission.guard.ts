@@ -83,7 +83,10 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Owner bypass - Prioritize isOwner flag, but also check ownerId as fallback
-    if (membership.isOwner === true || membership.organization?.ownerId === user.sub) {
+    if (
+      membership.isOwner === true ||
+      (user.sub && membership.organization?.ownerId === user.sub)
+    ) {
       return true;
     }
 
