@@ -45,6 +45,16 @@ export class OrganizationsController {
     return this.organizationsService.getOrganizations(req.user.sub);
   }
 
+  @ApiOperation({ summary: 'Create Organization' })
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  createOrganization(
+    @Req() req: RequestWithAuth,
+    @Body() dto: { name: string; slug: string },
+  ) {
+    return this.organizationsService.create(req.user.sub, dto);
+  }
+
   @ApiOperation({ summary: 'Update Organization' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermissions('organization.updated')

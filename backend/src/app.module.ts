@@ -66,15 +66,16 @@ import { RedisModule } from './database/redis.module';
     }),
     CacheModule.registerAsync({
       isGlobal: true,
-      useFactory: () => {
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        const connection =
+          redisUrl ??
+          `redis://${configService.get('REDIS_HOST', 'localhost')}:${configService.get('REDIS_PORT', 6379)}`;
         return {
-          stores: [
-            createKeyv(
-              `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
-            ),
-          ],
+          stores: [createKeyv(connection)],
         };
       },
+      inject: [ConfigService],
     }),
     ConfigModule.forRoot({
       isGlobal: true,
