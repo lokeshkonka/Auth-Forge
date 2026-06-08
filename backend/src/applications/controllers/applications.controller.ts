@@ -59,6 +59,17 @@ export class ApplicationsController {
     return this.applicationsService.findAll(organizationId);
   }
 
+  @ApiOperation({ summary: 'Get Application Stats' })
+  @Get(':appId/stats')
+  @ApiParam({ name: 'appId', description: 'Application ID' })
+  @RequirePermissions('application.view')
+  getStats(
+    @Param('orgId') orgId: string,
+    @Param('appId') appId: string,
+  ) {
+    return this.applicationsService.getStats(orgId, appId);
+  }
+
   @ApiOperation({ summary: 'Get Application Details' })
   @Get(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })

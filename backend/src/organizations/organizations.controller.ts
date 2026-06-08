@@ -96,7 +96,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'List Organization Members' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.handle')
+  @RequirePermissions('member.view')
   @Get(':orgId/members')
   listMembers(@Param('orgId') organizationId: string) {
     return this.organizationsService.listMembers(organizationId);

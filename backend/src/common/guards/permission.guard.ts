@@ -37,25 +37,26 @@ export class PermissionGuard implements CanActivate {
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],
     );
+    
+    // If no permissions required, allow access
     if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true;
-    }
-
-    // --- Public / Default Permissions (No Role Required) ---
-    const publicPermissions = [
-      'application.view',
-      'role.view',
-      'session.handle',
-    ];
-
-    if (requiredPermissions.every(p => publicPermissions.includes(p))) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest<PermissionRequest>();
     const user = request.user;
 
-    // Attempt to resolve organizationId from request (params or body)
+    // --- Basic Actions (Allow for any organization member) ---
+    // Anyone in the org can view applications and handle their own sessions
+    const basicPermissions = [
+      'application.view',
+      'session.handle',
+      'organization.view',
+      'role.view',
+      'permission.read',
+      'member.view'
+    ];
+
     const organizationId =
       request.params.organizationId ||
       request.params.orgId ||
@@ -63,34 +64,43 @@ export class PermissionGuard implements CanActivate {
       request.params.id;
 
     if (!user || !user.member) {
-      return false; // Not authenticated or member not loaded
+      return false;
     }
 
     if (!organizationId) {
-      return false; // No org context to evaluate permissions against
+      // If no organization context, we can't check permissions
+      return false;
     }
 
-    // Check if user is the owner of the organization
     const membership = user.member.memberships.find(
       (m) => m.organizationId === organizationId,
     );
+
     if (!membership) {
-      return false; // Not a member of the organization
+      return false;
     }
 
-    // Owner check: Either flag on membership or matching ownerId on organization
-    if (membership.isOwner || membership.organization?.ownerId === user.sub) {
+    // Owner bypass - Prioritize isOwner flag, but also check ownerId as fallback
+    if (membership.isOwner === true || membership.organization?.ownerId === user.sub) {
+      return true;
+    }
+
+    // If all required permissions are basic ones, allow any member
+    if (requiredPermissions.every(p => basicPermissions.includes(p))) {
       return true;
     }
 
     const userPermissions = new Set<string>();
     for (const memberRole of membership.roles) {
-      for (const rolePermission of memberRole.role.permissions) {
-        userPermissions.add(rolePermission.permission.key);
+      if (memberRole.role && memberRole.role.permissions) {
+        for (const rolePermission of memberRole.role.permissions) {
+          if (rolePermission.permission) {
+            userPermissions.add(rolePermission.permission.key);
+          }
+        }
       }
     }
 
-    // Must have all required permissions
     return requiredPermissions.every((permission) =>
       userPermissions.has(permission),
     );

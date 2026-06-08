@@ -55,6 +55,18 @@ export class ApiKeysController {
     return this.apiKeysService.findAll(orgId, appId);
   }
 
+  @ApiOperation({ summary: 'Reveal API Key' })
+  @Get(':id/reveal')
+  @RequirePermissions('apikey.handle')
+  reveal(
+    @Param('orgId') orgId: string,
+    @Param('appId') appId: string,
+    @Param('id') id: string,
+    @Req() req: RequestWithAuth,
+  ) {
+    return this.apiKeysService.reveal(orgId, appId, id, req.user.sub);
+  }
+
   @ApiOperation({ summary: 'Remove API Key' })
   @Delete(':id')
   @ApiParam({ name: 'id', description: 'API Key ID' })

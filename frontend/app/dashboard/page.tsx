@@ -109,22 +109,22 @@ export default function DashboardPage() {
       </div>
 
       {applications.length === 0 ? (
-        <div className="auth-card p-12 text-center max-w-2xl mx-auto border-dashed border-2 border-border mt-12">
-          <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mx-auto mb-6 border border-border">
-            <LayoutGrid size={32} className="text-text-secondary" />
+        <div className="auth-card p-16 text-center max-w-2xl mx-auto border-dashed border-2 border-border mt-12 bg-[#121212]">
+          <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-8 border border-border shadow-2xl">
+            <LayoutGrid size={40} className="text-text-secondary" />
           </div>
-          <h2 className="text-xl font-bold mb-3 text-text-primary">Deploy your first application</h2>
-          <p className="text-text-secondary text-sm mb-8 leading-relaxed">
-            Applications hold your users, roles, and API keys. 
+          <h2 className="text-2xl font-black mb-4 text-text-primary uppercase tracking-tight">Deploy your first application</h2>
+          <p className="text-text-secondary text-sm mb-10 leading-relaxed font-medium">
+            Applications are secure environments that hold your users, roles, and API keys. Create one to start integrating AuthForge.
           </p>
-          <form onSubmit={handleCreateApp} className="space-y-4 text-left max-w-md mx-auto">
+          <form onSubmit={handleCreateApp} className="space-y-6 text-left max-w-md mx-auto">
             <div>
-              <label className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary mb-2">App Name</label>
+              <label className="block text-[11px] uppercase tracking-[0.2em] font-black text-text-secondary mb-3">Internal App Name</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. Production Cluster"
-                className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-primary focus:border-text-primary transition-all"
+                className="w-full bg-background border border-border rounded-xl px-5 py-4 text-sm text-text-primary focus:border-primary-brand transition-all outline-none font-bold shadow-inner"
                 value={newAppName}
                 onChange={(e) => setNewAppName(e.target.value)}
               />
@@ -132,34 +132,50 @@ export default function DashboardPage() {
             <button 
               type="submit" 
               disabled={isCreatingApp}
-              className="btn-primary w-full py-3 rounded-md text-sm mt-4 flex items-center justify-center gap-2 font-bold"
+              className="btn-primary w-full py-4 rounded-xl text-xs mt-4 flex items-center justify-center gap-3 font-black uppercase tracking-[0.2em] shadow-xl"
             >
-              {isCreatingApp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus size={16} />}
-              Create Application
+              {isCreatingApp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus size={18} />}
+              Initialize Application
             </button>
           </form>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {applications.map((app) => (
             <div 
               key={app.id} 
               onClick={() => setCurrentApp(app)}
-              className="auth-card p-6 border border-border group hover:border-text-secondary transition-all cursor-pointer flex flex-col h-full"
+              className="auth-card p-8 border border-border group hover:border-primary-brand/50 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] transition-all cursor-pointer flex flex-col h-full bg-[#121212] relative overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-10 h-10 rounded-md bg-surface-hover flex items-center justify-center text-text-secondary group-hover:text-primary-brand transition-colors border border-border">
-                  <LayoutGrid size={20} />
-                </div>
-                <span className="text-[10px] px-2 py-0.5 bg-background border border-border rounded font-mono text-text-secondary">{app.slug}</span>
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
+                 <ArrowUpRight size={24} className="text-primary-brand" />
               </div>
-              <h3 className="text-sm font-bold mb-2 text-text-primary group-hover:underline decoration-primary-brand underline-offset-4 decoration-2">{app.name}</h3>
-              <p className="text-xs text-text-secondary mb-6 line-clamp-2 leading-relaxed flex-1">{app.description || "Auth environment for this app."}</p>
+
+              <div className="flex justify-between items-start mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center text-text-secondary group-hover:text-primary-brand transition-colors border border-border shadow-lg">
+                  <LayoutGrid size={28} />
+                </div>
+                <span className="text-[10px] px-3 py-1 bg-background border border-border rounded-full font-black text-text-secondary uppercase tracking-widest">{app.slug}</span>
+              </div>
+              
+              <h3 className="text-lg font-black mb-3 text-text-primary tracking-tight uppercase group-hover:text-primary-brand transition-colors">{app.name}</h3>
+              <p className="text-xs text-text-secondary mb-8 line-clamp-2 leading-relaxed flex-1 font-medium">{app.description || "Secure authentication environment for this application."}</p>
+              
+              <div className="flex items-center justify-between pt-6 border-t border-border/50">
+                 <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Active</span>
+                 </div>
+                 <span className="text-[10px] font-black text-primary-brand uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all">Manage App</span>
+              </div>
             </div>
           ))}
-          <button className="auth-card p-6 border-dashed border-2 border-border flex flex-col items-center justify-center gap-3 hover:bg-surface-hover/30 transition-all group min-h-[200px]">
-            <div className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center text-text-secondary group-hover:scale-110 transition-transform border border-border"><Plus size={20} /></div>
-            <span className="text-sm font-bold text-text-primary">Create App</span>
+          <button 
+            onClick={() => { /* Potential modal trigger */ }}
+            className="auth-card p-8 border-dashed border-2 border-border flex flex-col items-center justify-center gap-4 hover:bg-surface-hover/30 hover:border-primary-brand/50 transition-all group min-h-[260px] bg-transparent"
+          >
+            <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center text-text-secondary group-hover:scale-110 group-hover:text-primary-brand transition-all border border-border"><Plus size={28} /></div>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-text-primary">Create New App</span>
           </button>
         </div>
       )}

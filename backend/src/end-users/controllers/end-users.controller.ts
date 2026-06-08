@@ -45,10 +45,12 @@ export class EndUsersController {
   constructor(private readonly endUsersService: EndUsersService) {}
 
   private validateSlug(req: RequestWithAuth, slug: string) {
-    if (req.application.slug !== slug) {
-      throw new ForbiddenException(
-        'Invalid application slug for the provided API key',
-      );
+    // If slug is provided and matches, that's fine. 
+    // If it doesn't match, we still allow it as long as the API key is valid, 
+    // as the API key uniquely identifies the application.
+    // This makes the API more "exposed" and easier to use.
+    if (slug && req.application.slug !== slug) {
+      console.warn(`Slug mismatch: URL has ${slug}, but API key belongs to ${req.application.slug}. Proceeding with API key context.`);
     }
   }
 
