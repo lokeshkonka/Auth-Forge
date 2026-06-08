@@ -4,10 +4,14 @@ import { PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
 
 interface PermissionRequest {
   user?: {
+    sub: string;
     member?: {
       memberships: Array<{
         organizationId: string;
         isOwner: boolean;
+        organization?: {
+          ownerId: string | null;
+        };
         roles: Array<{
           role: {
             permissions: Array<{
