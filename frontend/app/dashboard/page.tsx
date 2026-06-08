@@ -10,6 +10,7 @@ import { Loader2, Plus, LayoutGrid } from 'lucide-react';
 import { AppDashboard } from '@/components/dashboard/AppDashboard';
 import { AppUsers } from '@/components/dashboard/AppUsers';
 import { AppRoles } from '@/components/dashboard/AppRoles';
+import { AppPermissions } from '@/components/dashboard/AppPermissions';
 import { AppAuditLogs } from '@/components/dashboard/AppAuditLogs';
 import { AppApiKeys } from '@/components/dashboard/AppApiKeys';
 import { AppDocs } from '@/components/dashboard/AppDocs';
