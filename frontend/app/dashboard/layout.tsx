@@ -10,10 +10,17 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
-  const { isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { organizations, currentOrg, setCurrentOrg, currentApp, isLoading: isDashboardLoading } = useDashboard();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (!isAuthLoading && !user) {
+      router.push('/auth');
+    }
+  }, [isAuthLoading, user, router]);
 
   if (isAuthLoading || (isDashboardLoading && organizations.length === 0)) {
     return (
