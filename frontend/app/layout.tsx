@@ -32,6 +32,9 @@ const jetbrainsMono = localFont({
 export const metadata: Metadata = {
   title: "AuthForge",
   description: "Secure and Scalable Authentication for Modern Apps",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
