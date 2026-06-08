@@ -6,6 +6,7 @@ import { Navbar } from '@/components/dashboard/Navbar';
 import { AppNavbar } from '@/components/dashboard/AppNavbar';
 import { useAuth } from '@/context/AuthContext';
 import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

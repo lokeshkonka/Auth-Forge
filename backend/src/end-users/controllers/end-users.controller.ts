@@ -253,6 +253,3 @@ export class EndUsersController {
     return this.endUsersService.revokeSession(req.user.userId, id);
   }
 }
-
-  }
-}
