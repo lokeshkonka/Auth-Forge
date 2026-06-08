@@ -25,4 +25,4 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3000
 
 # Railway will provide the DATABASE_URL and REDIS_URL
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/src/main.js"]
