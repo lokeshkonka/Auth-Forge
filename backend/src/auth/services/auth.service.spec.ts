@@ -62,9 +62,7 @@ describe('AuthService', () => {
         { id: 'session-2', userAgent: 'agent-2' },
       ];
 
-      mockSessionsService.findSessionsByMemberId.mockResolvedValue(
-        mockSessions,
-      );
+      (mockSessionsService.findSessionsByMemberId as jest.Mock).mockResolvedValue(mockSessions);
 
       const result = await service.getSessions(memberId, currentSessionId);
 
@@ -80,21 +78,13 @@ describe('AuthService', () => {
       const memberId = 'member-1';
       const currentSessionId = 'session-1';
 
-      mockSessionsService.revokeAllSessions.mockResolvedValue({
-        count: 5,
-      });
+      (mockSessionsService.revokeAllSessions as jest.Mock).mockResolvedValue({ count: 5 });
 
-      const result = await service.revokeAllSessions(
-        memberId,
-        currentSessionId,
-      );
+      const result = await service.revokeAllSessions(memberId, currentSessionId);
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('revoked successfully');
-      expect(mockSessionsService.revokeAllSessions).toHaveBeenCalledWith(
-        memberId,
-        currentSessionId,
-      );
+      expect(mockSessionsService.revokeAllSessions).toHaveBeenCalledWith(memberId, currentSessionId);
     });
   });
 });

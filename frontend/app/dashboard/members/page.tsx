@@ -26,35 +26,7 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { ConfirmModal } from '@/components/dashboard/ConfirmModal';
 
-interface Role {
-  id: string;
-  name: string;
-}
-
-interface Member {
-  id: string;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  isOwner: boolean;
-  status: string;
-  createdAt: string;
-  roles: Role[];
-}
-
-interface AvailableRole {
-  id: string;
-  name: string;
-}
-
-interface Invitation {
-  id: string;
-  email: string;
-  token: string;
-  createdAt: string;
-  expiresAt: string;
-}
-
+// ... (keep interface definitions)
 
 export default function MembersPage() {
   const { user } = useAuth();

@@ -6,10 +6,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { TokenBlacklistService } from '../../common/services/token-blacklist.service';
 
 @Injectable()
-export class EndUserJwtStrategy extends PassportStrategy(
-  Strategy,
-  'end-user-jwt',
-) {
+export class EndUserJwtStrategy extends PassportStrategy(Strategy, 'end-user-jwt') {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
@@ -25,7 +22,7 @@ export class EndUserJwtStrategy extends PassportStrategy(
 
   async validate(req: any, payload: any) {
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-    if (token && (await this.tokenBlacklistService.isTokenBlacklisted(token))) {
+    if (token && await this.tokenBlacklistService.isTokenBlacklisted(token)) {
       throw new UnauthorizedException('Token has been revoked');
     }
 

@@ -59,25 +59,18 @@ describe('EndUsersController', () => {
   describe('validateSlug', () => {
     it('should throw ForbiddenException if slugs do not match', () => {
       const req = { application: { slug: 'other-slug' } } as any;
-      expect(() => (controller as any).validateSlug(req, 'my-app')).toThrow(
-        ForbiddenException,
-      );
+      expect(() => (controller as any).validateSlug(req, 'my-app')).toThrow(ForbiddenException);
     });
 
     it('should not throw if slugs match', () => {
       const req = { application: { slug: 'my-app' } } as any;
-      expect(() =>
-        (controller as any).validateSlug(req, 'my-app'),
-      ).not.toThrow();
+      expect(() => (controller as any).validateSlug(req, 'my-app')).not.toThrow();
     });
   });
 
   describe('findAllUsers', () => {
     it('should call service.findAllUsers with applicationId', async () => {
-      const req = {
-        application: { slug: 'my-app' },
-        applicationId: 'app-123',
-      } as any;
+      const req = { application: { slug: 'my-app' }, applicationId: 'app-123' } as any;
       await controller.findAllUsers('my-app', req);
       expect(service.findAllUsers).toHaveBeenCalledWith('app-123');
     });
@@ -86,10 +79,7 @@ describe('EndUsersController', () => {
   describe('createUser', () => {
     it('should call service.createUser with applicationId and dto', async () => {
       const dto = { email: 'test@example.com', password: 'password123' };
-      const req = {
-        application: { slug: 'my-app' },
-        applicationId: 'app-123',
-      } as any;
+      const req = { application: { slug: 'my-app' }, applicationId: 'app-123' } as any;
       await controller.createUser('my-app', req, dto);
       expect(service.createUser).toHaveBeenCalledWith('app-123', dto);
     });
@@ -98,25 +88,15 @@ describe('EndUsersController', () => {
   describe('updateUser', () => {
     it('should call service.updateUser with applicationId, id, and dto', async () => {
       const dto = { email: 'new@example.com' };
-      const req = {
-        application: { slug: 'my-app' },
-        applicationId: 'app-123',
-      } as any;
+      const req = { application: { slug: 'my-app' }, applicationId: 'app-123' } as any;
       await controller.updateUser('my-app', 'user-123', req, dto);
-      expect(service.updateUser).toHaveBeenCalledWith(
-        'app-123',
-        'user-123',
-        dto,
-      );
+      expect(service.updateUser).toHaveBeenCalledWith('app-123', 'user-123', dto);
     });
   });
 
   describe('deleteUser', () => {
     it('should call service.deleteUser with applicationId and id', async () => {
-      const req = {
-        application: { slug: 'my-app' },
-        applicationId: 'app-123',
-      } as any;
+      const req = { application: { slug: 'my-app' }, applicationId: 'app-123' } as any;
       await controller.deleteUser('my-app', 'user-123', req);
       expect(service.deleteUser).toHaveBeenCalledWith('app-123', 'user-123');
     });
@@ -125,10 +105,7 @@ describe('EndUsersController', () => {
   describe('bulkImportUsers', () => {
     it('should call service.bulkImportUsers with applicationId and users array', async () => {
       const users = [{ email: 'u1@ex.com', password: 'p1' }];
-      const req = {
-        application: { slug: 'my-app' },
-        applicationId: 'app-123',
-      } as any;
+      const req = { application: { slug: 'my-app' }, applicationId: 'app-123' } as any;
       await controller.bulkImportUsers('my-app', req, { users });
       expect(service.bulkImportUsers).toHaveBeenCalledWith('app-123', users);
     });
@@ -137,10 +114,7 @@ describe('EndUsersController', () => {
   describe('signup', () => {
     it('should call service.signup', async () => {
       const dto = { email: 'test@example.com', password: 'password123' };
-      const req = {
-        application: { slug: 'my-app' },
-        applicationId: 'app-123',
-      } as any;
+      const req = { application: { slug: 'my-app' }, applicationId: 'app-123' } as any;
       await controller.signup('my-app', req, dto);
       expect(service.signup).toHaveBeenCalledWith('app-123', dto);
     });
@@ -148,9 +122,9 @@ describe('EndUsersController', () => {
 
   describe('getProfile', () => {
     it('should call service.getProfile', async () => {
-      const req = {
-        application: { slug: 'my-app' },
-        user: { userId: 'user-123' },
+      const req = { 
+        application: { slug: 'my-app' }, 
+        user: { userId: 'user-123' } 
       } as any;
       await controller.getProfile('my-app', req);
       expect(service.getProfile).toHaveBeenCalledWith('user-123');
@@ -159,9 +133,9 @@ describe('EndUsersController', () => {
 
   describe('getSessions', () => {
     it('should call service.getSessions with userId and sessionId', async () => {
-      const req = {
-        application: { slug: 'my-app' },
-        user: { userId: 'user-123', sessionId: 'sess-456' },
+      const req = { 
+        application: { slug: 'my-app' }, 
+        user: { userId: 'user-123', sessionId: 'sess-456' } 
       } as any;
       await controller.getSessions('my-app', req);
       expect(service.getSessions).toHaveBeenCalledWith('user-123', 'sess-456');

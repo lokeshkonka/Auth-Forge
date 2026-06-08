@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../../audit/services/audit.service';
 import * as crypto from 'node:crypto';
@@ -16,12 +12,7 @@ export class ApiKeysService {
     private readonly auditService: AuditService,
   ) {}
 
-  async create(
-    organizationId: string,
-    applicationId: string,
-    dto: CreateApiKeyDto,
-    actorId?: string,
-  ) {
+  async create(organizationId: string, applicationId: string, dto: CreateApiKeyDto, actorId?: string) {
     const { name } = dto;
     // Verify application belongs to organization
     const application = await this.prisma.application.findFirst({
@@ -37,9 +28,7 @@ export class ApiKeysService {
     });
 
     if (existingKey) {
-      throw new ConflictException(
-        `API Key with name ${name} already exists for this application`,
-      );
+      throw new ConflictException(`API Key with name ${name} already exists for this application`);
     }
 
     const publishableKey = `pk_live_${crypto.randomBytes(24).toString('hex')}`;
@@ -72,7 +61,7 @@ export class ApiKeysService {
       createdAt: apiKey.createdAt,
       expiresAt: apiKey.expiresAt,
       publishableKey, // Return raw key only once
-      secretKey, // Return raw key only once
+      secretKey,      // Return raw key only once
     };
   }
 
@@ -99,55 +88,12 @@ export class ApiKeysService {
     });
   }
 
-  async reveal(
-    organizationId: string,
-    applicationId: string,
-    id: string,
-    actorId?: string,
-  ) {
+  async remove(organizationId: string, applicationId: string, id: string, actorId?: string) {
     const apiKey = await this.prisma.apiKey.findFirst({
-      where: {
-        id,
-        applicationId,
-        application: { organizationId },
-      },
-    });
-
-    if (!apiKey) {
-      throw new NotFoundException('API Key not found');
-    }
-
-    // Generate Audit Log for the reveal action
-    await this.auditService.createLog({
-      organizationId,
-      actorId,
-      action: 'apikey.revealed',
-      resourceType: 'ApiKey',
-      resourceId: id,
-      newValue: { name: apiKey.name },
-    });
-
-    // Since we use bcrypt, we can't actually reveal the key.
-    // In a real system, we might store an encrypted version or just show it once.
-    // For this prototype/fix, we'll return a placeholder to satisfy the UI.
-    return {
-      publishableKey: `pk_live_************************`,
-      secretKey: `sk_live_************************`,
-      note: 'Keys are hashed and cannot be revealed after creation for security reasons.',
-    };
-  }
-
-  async remove(
-    organizationId: string,
-    applicationId: string,
-    id: string,
-    actorId?: string,
-  ) {
-    const apiKey = await this.prisma.apiKey.findFirst({
-      where: {
-        id,
-        applicationId,
-        application: { organizationId },
+      where: { 
+        id, 
+        applicationId, 
+        application: { organizationId } 
       },
     });
 

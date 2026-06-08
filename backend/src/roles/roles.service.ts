@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/services/audit.service';
 import { MembersService } from '../members/members.service';
@@ -18,29 +13,20 @@ export class RolesService {
     private readonly membersService: MembersService,
   ) {}
 
-  async create(
-    organizationId: string,
-    createRoleDto: CreateRoleDto,
-    actorId: string,
-  ) {
+  async create(organizationId: string, createRoleDto: CreateRoleDto, actorId: string) {
     const { name, description, permissionIds } = createRoleDto;
 
     // Check if actor has the permissions they are trying to assign
     if (permissionIds && permissionIds.length > 0) {
-      const actorPermissions = await this.membersService.getMemberPermissions(
-        actorId,
-        organizationId,
-      );
+      const actorPermissions = await this.membersService.getMemberPermissions(actorId, organizationId);
       const requestedPermissions = await this.prisma.permission.findMany({
         where: { id: { in: permissionIds } },
-        select: { key: true },
+        select: { key: true }
       });
 
       for (const rp of requestedPermissions) {
         if (!actorPermissions.includes(rp.key)) {
-          throw new ForbiddenException(
-            `You cannot assign permission ${rp.key} as you do not have it yourself`,
-          );
+          throw new ForbiddenException(`You cannot assign permission ${rp.key} as you do not have it yourself`);
         }
       }
     }
@@ -55,9 +41,7 @@ export class RolesService {
     });
 
     if (existingRole) {
-      throw new ConflictException(
-        `Role with name ${name} already exists in this organization`,
-      );
+      throw new ConflictException(`Role with name ${name} already exists in this organization`);
     }
 
     const role = await this.prisma.role.create({
@@ -65,21 +49,19 @@ export class RolesService {
         organizationId,
         name,
         description,
-        permissions: permissionIds
-          ? {
-              create: permissionIds.map((permissionId) => ({
-                permission: { connect: { id: permissionId } },
-              })),
-            }
-          : undefined,
+        permissions: permissionIds ? {
+          create: permissionIds.map(permissionId => ({
+            permission: { connect: { id: permissionId } }
+          }))
+        } : undefined,
       },
       include: {
         permissions: {
           include: {
-            permission: true,
-          },
-        },
-      },
+            permission: true
+          }
+        }
+      }
     });
 
     await this.auditService.createLog({
@@ -100,10 +82,10 @@ export class RolesService {
       include: {
         permissions: {
           include: {
-            permission: true,
-          },
-        },
-      },
+            permission: true
+          }
+        }
+      }
     });
   }
 
@@ -113,10 +95,10 @@ export class RolesService {
       include: {
         permissions: {
           include: {
-            permission: true,
-          },
-        },
-      },
+            permission: true
+          }
+        }
+      }
     });
 
     if (!role) {
@@ -126,18 +108,28 @@ export class RolesService {
     return role;
   }
 
-  async update(
-    organizationId: string,
-    id: string,
-    updateRoleDto: UpdateRoleDto,
-    actorId: string,
-  ) {
+  async update(organizationId: string, id: string, updateRoleDto: UpdateRoleDto, actorId: string) {
     const { name, description, permissionIds } = updateRoleDto;
+
+    // Check if actor has the permissions they are trying to assign
+    if (permissionIds && permissionIds.length > 0) {
+      const actorPermissions = await this.membersService.getMemberPermissions(actorId, organizationId);
+      const requestedPermissions = await this.prisma.permission.findMany({
+        where: { id: { in: permissionIds } },
+        select: { key: true }
+      });
+
+      for (const rp of requestedPermissions) {
+        if (!actorPermissions.includes(rp.key)) {
+          throw new ForbiddenException(`You cannot assign permission ${rp.key} as you do not have it yourself`);
+        }
+      }
+    }
 
     const role = await this.findOne(organizationId, id);
 
     if (role.isSystemRole) {
-      throw new ConflictException('Cannot update system roles directly');
+       throw new ConflictException('Cannot update system roles directly');
     }
 
     if (name && name !== role.name) {
@@ -151,9 +143,7 @@ export class RolesService {
       });
 
       if (existingRole) {
-        throw new ConflictException(
-          `Role with name ${name} already exists in this organization`,
-        );
+        throw new ConflictException(`Role with name ${name} already exists in this organization`);
       }
     }
 
@@ -165,19 +155,19 @@ export class RolesService {
         ...(permissionIds && {
           permissions: {
             deleteMany: {},
-            create: permissionIds.map((permissionId) => ({
-              permission: { connect: { id: permissionId } },
-            })),
-          },
-        }),
+            create: permissionIds.map(permissionId => ({
+              permission: { connect: { id: permissionId } }
+            }))
+          }
+        })
       },
       include: {
         permissions: {
           include: {
-            permission: true,
-          },
-        },
-      },
+            permission: true
+          }
+        }
+      }
     });
 
     await this.auditService.createLog({
@@ -196,7 +186,7 @@ export class RolesService {
   async remove(organizationId: string, id: string, actorId?: string) {
     const role = await this.findOne(organizationId, id);
     if (role.isSystemRole) {
-      throw new ConflictException('Cannot delete system roles');
+       throw new ConflictException('Cannot delete system roles');
     }
 
     const deleted = await this.prisma.role.delete({

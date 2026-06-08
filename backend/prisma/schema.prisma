@@ -170,7 +170,6 @@ model Application {
   organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   roles          ApplicationRole[]
   endUsers       EndUser[]
-  permissions    ApplicationPermission[]
 
   @@unique([organizationId, slug])
 }
@@ -221,39 +220,15 @@ model EndUserSession {
 }
 
 model ApplicationRole {
-  id            String                         @id @default(uuid())
+  id            String                  @id @default(uuid())
   applicationId String
   name          String
   description   String?
-  createdAt     DateTime                       @default(now())
-  application   Application                    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime                @default(now())
+  application   Application             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   users         EndUserRoleAssignment[]
-  permissions   ApplicationRolePermission[]
 
   @@unique([applicationId, name])
-}
-
-model ApplicationPermission {
-  id            String                         @id @default(uuid())
-  applicationId String
-  key           String
-  name          String
-  description   String?
-  createdAt     DateTime                       @default(now())
-  application   Application                    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  roles         ApplicationRolePermission[]
-
-  @@unique([applicationId, key])
-}
-
-model ApplicationRolePermission {
-  roleId       String
-  permissionId String
-  assignedAt   DateTime              @default(now())
-  role         ApplicationRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   ApplicationPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([roleId, permissionId])
 }
 
 model EndUserRoleAssignment {

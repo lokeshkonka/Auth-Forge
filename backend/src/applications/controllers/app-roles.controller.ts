@@ -1,26 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { AppRolesService } from '../services/app-roles.service';
 import { CreateAppRoleDto, UpdateAppRoleDto } from '../dto/app-role.dto';
 import { AssignAppRoleDto } from '../dto/assign-app-role.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam } from '@nestjs/swagger';
 
 type RequestWithAuth = {
   user: {
@@ -40,7 +25,7 @@ export class AppRolesController {
 
   @ApiOperation({ summary: 'Create Application Role' })
   @Post()
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.created')
   create(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -52,7 +37,7 @@ export class AppRolesController {
 
   @ApiOperation({ summary: 'List Application Roles' })
   @Get()
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.created')
   findAll(@Param('appId') appId: string) {
     return this.appRolesService.findAll(appId);
   }
@@ -60,7 +45,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Get Application Role Details' })
   @Get(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.created')
   findOne(@Param('appId') appId: string, @Param('id') id: string) {
     return this.appRolesService.findOne(appId, id);
   }
@@ -68,7 +53,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Update Application Role' })
   @Patch(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.updated')
   update(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -82,7 +67,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Delete Application Role' })
   @Delete(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.deleted')
   remove(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -95,7 +80,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Assign Application Role to User' })
   @Post('assignments/:userId')
   @ApiParam({ name: 'userId', description: 'End-User ID' })
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.assigned')
   assignToUser(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -103,20 +88,14 @@ export class AppRolesController {
     @Body() dto: AssignAppRoleDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.appRolesService.assignToUser(
-      appId,
-      userId,
-      dto.roleId,
-      orgId,
-      req.user.sub,
-    );
+    return this.appRolesService.assignToUser(appId, userId, dto.roleId, orgId, req.user.sub);
   }
 
   @ApiOperation({ summary: 'Unassign Application Role from User' })
   @Delete('assignments/:userId/:roleId')
   @ApiParam({ name: 'userId', description: 'End-User ID' })
   @ApiParam({ name: 'roleId', description: 'Role ID' })
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.unassigned')
   unassignFromUser(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -124,12 +103,6 @@ export class AppRolesController {
     @Param('roleId') roleId: string,
     @Req() req: RequestWithAuth,
   ) {
-    return this.appRolesService.unassignFromUser(
-      appId,
-      userId,
-      roleId,
-      orgId,
-      req.user.sub,
-    );
+    return this.appRolesService.unassignFromUser(appId, userId, roleId, orgId, req.user.sub);
   }
 }

@@ -21,28 +21,7 @@ import { useDashboard } from '@/context/DashboardContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-interface Permission {
-  id: string;
-  name: string;
-  key: string;
-  action: string;
-  resource: string;
-  description: string | null;
-}
-
-interface RolePermission {
-  permission: Permission;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  description: string | null;
-  isDefault: boolean;
-  isSystemRole: boolean;
-  permissions: RolePermission[];
-}
-
+// ... (keep interface definitions)
 
 export default function RolesPage() {
   const { currentOrg } = useDashboard();
@@ -65,7 +44,6 @@ export default function RolesPage() {
   const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchRoles = async () => {
     if (!currentOrg) return;
@@ -80,9 +58,7 @@ export default function RolesPage() {
   const fetchPermissions = async () => {
     try {
       const permsResponse = await api.get('/permissions');
-      // The backend returns { success: true, data: { categories: ... } }
-      const categories = permsResponse.data?.categories || permsResponse.categories || {};
-      setAllPermissions(categories);
+      setAllPermissions(permsResponse.data.categories);
     } catch (err) {
       console.error("Failed to fetch permissions", err);
     }

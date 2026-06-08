@@ -60,9 +60,7 @@ describe('PermissionGuard', () => {
     });
 
     it('should return false if user or member is missing', () => {
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue(['application.created']);
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['application.created']);
       mockRequest.user = null;
       expect(guard.canActivate(mockContext)).toBe(false);
 
@@ -71,17 +69,13 @@ describe('PermissionGuard', () => {
     });
 
     it('should return false if organizationId cannot be resolved', () => {
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue(['application.created']);
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['application.created']);
       expect(guard.canActivate(mockContext)).toBe(false);
     });
 
     it('should return true if user is the owner of the organization', () => {
       const orgId = 'org-123';
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue(['application.created']);
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['application.created']);
       mockRequest.params.orgId = orgId;
       mockRequest.user.member.memberships = [
         {
@@ -97,14 +91,12 @@ describe('PermissionGuard', () => {
     it('should resolve organizationId correctly when both orgId and appId are present (Bug Fix Check)', () => {
       const orgId = 'org-123';
       const resourceId = 'app-456';
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue(['application.created']);
-
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['application.created']);
+      
       // Simulating GET /organizations/:orgId/applications/:appId
       mockRequest.params.orgId = orgId;
       mockRequest.params.appId = resourceId;
-
+      
       // User is a member of org-123, NOT app-456 (which would happen if it picked the wrong ID)
       mockRequest.user.member.memberships = [
         {
@@ -113,11 +105,13 @@ describe('PermissionGuard', () => {
           roles: [
             {
               role: {
-                permissions: [{ permission: { key: 'application.created' } }],
-              },
-            },
-          ],
-        },
+                permissions: [
+                  { permission: { key: 'application.created' } }
+                ]
+              }
+            }
+          ]
+        }
       ];
 
       expect(guard.canActivate(mockContext)).toBe(true);
@@ -125,12 +119,10 @@ describe('PermissionGuard', () => {
 
     it('should return false if user has no membership in the organization', () => {
       const orgId = 'org-123';
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue(['application.created']);
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['application.created']);
       mockRequest.params.orgId = orgId;
       mockRequest.user.member.memberships = [
-        { organizationId: 'other-org', roles: [] },
+        { organizationId: 'other-org', roles: [] }
       ];
 
       expect(guard.canActivate(mockContext)).toBe(false);
@@ -138,9 +130,7 @@ describe('PermissionGuard', () => {
 
     it('should return false if user lacks required permissions', () => {
       const orgId = 'org-123';
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockReturnValue(['application.deleted']);
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['application.deleted']);
       mockRequest.params.orgId = orgId;
       mockRequest.user.member.memberships = [
         {
@@ -149,11 +139,13 @@ describe('PermissionGuard', () => {
           roles: [
             {
               role: {
-                permissions: [{ permission: { key: 'application.created' } }],
-              },
-            },
-          ],
-        },
+                permissions: [
+                  { permission: { key: 'application.created' } }
+                ]
+              }
+            }
+          ]
+        }
       ];
 
       expect(guard.canActivate(mockContext)).toBe(false);

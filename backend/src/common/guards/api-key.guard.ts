@@ -27,10 +27,7 @@ export class ApiKeyAuthGuard implements CanActivate {
 
     // Try to get from cache
     const cacheKey = `apikey:${apiKey}`;
-    const cachedData = await this.cacheManager.get<{
-      application: any;
-      applicationId: string;
-    }>(cacheKey);
+    const cachedData = await this.cacheManager.get<{ application: any; applicationId: string }>(cacheKey);
 
     if (cachedData) {
       request.application = cachedData.application;
@@ -52,7 +49,7 @@ export class ApiKeyAuthGuard implements CanActivate {
       } else if (apiKey.startsWith('sk_live_')) {
         isMatch = await bcrypt.compare(apiKey, key.secretKeyHash);
       }
-
+      
       if (isMatch) {
         matchedKey = key;
         break;
@@ -64,22 +61,16 @@ export class ApiKeyAuthGuard implements CanActivate {
     }
 
     // Cache the result for 5 minutes
-    await this.cacheManager.set(
-      cacheKey,
-      {
-        application: matchedKey.application,
-        applicationId: matchedKey.applicationId,
-      },
-      300000,
-    );
+    await this.cacheManager.set(cacheKey, {
+      application: matchedKey.application,
+      applicationId: matchedKey.applicationId,
+    }, 300000);
 
     // Update lastUsedAt asynchronously
-    this.prisma.apiKey
-      .update({
-        where: { id: matchedKey.id },
-        data: { lastUsedAt: new Date() },
-      })
-      .catch((err) => console.error('Failed to update lastUsedAt:', err));
+    this.prisma.apiKey.update({
+      where: { id: matchedKey.id },
+      data: { lastUsedAt: new Date() },
+    }).catch(err => console.error('Failed to update lastUsedAt:', err));
 
     // Attach application to request
     request.application = matchedKey.application;

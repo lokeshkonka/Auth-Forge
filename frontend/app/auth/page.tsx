@@ -110,8 +110,7 @@ function AuthContent() {
   };
 
   const handleGoogleLogin = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    window.location.href = `${apiUrl}/auth/google`;
+    window.location.href = 'http://localhost:3000/auth/google';
   };
 
   return (

@@ -1,19 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ApiKeysService } from '../services/api-keys.service';
 import { CreateApiKeyDto } from '../dto/create-api-key.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -38,7 +24,7 @@ export class ApiKeysController {
 
   @ApiOperation({ summary: 'Create API Key' })
   @Post()
-  @RequirePermissions('apikey.handle')
+  @RequirePermissions('apikey.created')
   create(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -50,27 +36,18 @@ export class ApiKeysController {
 
   @ApiOperation({ summary: 'List API Keys' })
   @Get()
-  @RequirePermissions('apikey.view')
-  findAll(@Param('orgId') orgId: string, @Param('appId') appId: string) {
-    return this.apiKeysService.findAll(orgId, appId);
-  }
-
-  @ApiOperation({ summary: 'Reveal API Key' })
-  @Get(':id/reveal')
-  @RequirePermissions('apikey.handle')
-  reveal(
+  @RequirePermissions('apikey.created')
+  findAll(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
-    @Param('id') id: string,
-    @Req() req: RequestWithAuth,
   ) {
-    return this.apiKeysService.reveal(orgId, appId, id, req.user.sub);
+    return this.apiKeysService.findAll(orgId, appId);
   }
 
   @ApiOperation({ summary: 'Remove API Key' })
   @Delete(':id')
   @ApiParam({ name: 'id', description: 'API Key ID' })
-  @RequirePermissions('apikey.handle')
+  @RequirePermissions('apikey.revoked')
   remove(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,

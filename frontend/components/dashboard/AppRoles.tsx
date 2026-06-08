@@ -12,8 +12,7 @@ import {
   ChevronUp,
   AlertCircle,
   X,
-  Edit2,
-  Check
+  Edit2
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDashboard } from '@/context/DashboardContext';
@@ -24,13 +23,6 @@ interface AppRole {
   id: string;
   name: string;
   description?: string;
-  permissions?: {
-    permission: {
-      id: string;
-      key: string;
-      name: string;
-    };
-  }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -181,7 +173,7 @@ export function AppRoles() {
             <thead>
               <tr className="bg-surface text-[10px] uppercase tracking-widest font-bold text-text-secondary border-b border-border">
                 <th className="px-6 py-4">Role Name</th>
-                <th className="px-6 py-4">Permissions</th>
+                <th className="px-6 py-4">Description</th>
                 <th className="px-6 py-4">Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -202,13 +194,10 @@ export function AppRoles() {
                   <tr key={role.id} className="hover:bg-surface-hover/30 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="font-bold text-text-primary uppercase tracking-tighter text-xs">{role.name}</div>
-                      <div className="text-[9px] text-text-secondary font-mono mt-0.5 truncate max-w-[150px]">{role.description || "No description"}</div>
+                      <div className="text-[9px] text-text-secondary font-mono mt-0.5">{role.id}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-text-secondary text-[10px] font-bold uppercase tracking-wider">
-                        <ShieldCheck size={12} className="text-primary-brand/60" />
-                        {role.permissions?.length || 0} Permissions
-                      </div>
+                    <td className="px-6 py-4 text-text-secondary text-xs max-w-xs truncate">
+                      {role.description || <span className="italic opacity-50 text-[10px]">No description provided</span>}
                     </td>
                     <td className="px-6 py-4 text-text-secondary text-[10px] font-medium">
                       {new Date(role.createdAt).toLocaleDateString()}

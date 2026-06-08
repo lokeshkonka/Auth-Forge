@@ -6,12 +6,9 @@ import {
   Param,
   Post,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { type Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -51,10 +48,7 @@ type GoogleRequest = {
 @ApiTags('Management Dashboard')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ summary: 'System Health Check' })
   @Get('health')
@@ -95,25 +89,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Google Auth Callback' })
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  async googleAuthRedirect(@Req() req: GoogleRequest, @Res() res: Response) {
+  async googleAuthRedirect(@Req() req: GoogleRequest) {
     const userAgent = Array.isArray(req.headers['user-agent'])
       ? req.headers['user-agent'][0]
       : req.headers['user-agent'];
 
-    const result = await this.authService.googleLogin(req.user, {
+    return this.authService.googleLogin(req.user, {
       userAgent,
       ipAddress: req.ip,
     });
-
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:3001';
-
-    const { accessToken, refreshToken, isNew } = result.data;
-
-    return res.redirect(
-      `${frontendUrl}/auth?token=${accessToken}&refreshToken=${refreshToken}&new=${isNew}`,
-    );
   }
 
   @ApiOperation({ summary: 'Get Profile' })

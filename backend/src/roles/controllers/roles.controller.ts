@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RolesService } from '../roles.service';
 import { CreateRoleDto } from '../dto/create-role.dto';
@@ -33,32 +23,28 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Create Role' })
   @Post()
-  @RequirePermissions('role.handle')
-  create(
-    @Param('orgId') orgId: string,
-    @Body() createRoleDto: CreateRoleDto,
-    @Req() req: RequestWithAuth,
-  ) {
+  @RequirePermissions('role.created')
+  create(@Param('orgId') orgId: string, @Body() createRoleDto: CreateRoleDto, @Req() req: RequestWithAuth) {
     return this.rolesService.create(orgId, createRoleDto, req.user.sub);
   }
 
   @ApiOperation({ summary: 'List All Roles' })
   @Get()
-  @RequirePermissions('role.view')
+  @RequirePermissions('role.created')
   findAll(@Param('orgId') orgId: string) {
     return this.rolesService.findAll(orgId);
   }
 
   @ApiOperation({ summary: 'Get Role Details' })
   @Get(':id')
-  @RequirePermissions('role.view')
+  @RequirePermissions('role.created')
   findOne(@Param('orgId') orgId: string, @Param('id') id: string) {
     return this.rolesService.findOne(orgId, id);
   }
 
   @ApiOperation({ summary: 'Update Role' })
   @Patch(':id')
-  @RequirePermissions('role.handle')
+  @RequirePermissions('role.updated')
   update(
     @Param('orgId') orgId: string,
     @Param('id') id: string,
@@ -70,12 +56,8 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Remove Role' })
   @Delete(':id')
-  @RequirePermissions('role.handle')
-  remove(
-    @Param('orgId') orgId: string,
-    @Param('id') id: string,
-    @Req() req: RequestWithAuth,
-  ) {
+  @RequirePermissions('role.deleted')
+  remove(@Param('orgId') orgId: string, @Param('id') id: string, @Req() req: RequestWithAuth) {
     return this.rolesService.remove(orgId, id, req.user.sub);
   }
 }

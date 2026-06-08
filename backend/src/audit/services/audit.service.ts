@@ -22,25 +22,12 @@ export class AuditService {
 
   private filterSensitiveData(data: any): any {
     if (!data || typeof data !== 'object') return data;
-
-    const sensitiveKeys = [
-      'password',
-      'passwordHash',
-      'jwt',
-      'token',
-      'refreshToken',
-      'accessToken',
-      'apiKey',
-      'secretKey',
-      'keyHash',
-      'secretKeyHash',
-    ];
+    
+    const sensitiveKeys = ['password', 'passwordHash', 'jwt', 'token', 'refreshToken', 'accessToken', 'apiKey', 'secretKey', 'keyHash', 'secretKeyHash'];
     const filtered = { ...data };
 
     for (const key of Object.keys(filtered)) {
-      if (
-        sensitiveKeys.some((sk) => key.toLowerCase().includes(sk.toLowerCase()))
-      ) {
+      if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk.toLowerCase()))) {
         filtered[key] = '[REDACTED]';
       } else if (typeof filtered[key] === 'object') {
         filtered[key] = this.filterSensitiveData(filtered[key]);
@@ -74,8 +61,8 @@ export class AuditService {
       where: { organizationId },
       include: {
         organization: {
-          select: { name: true, slug: true },
-        },
+          select: { name: true, slug: true }
+        }
       },
       orderBy: { createdAt: 'desc' },
       take: safeLimit,

@@ -1,20 +1,5 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 
 import { InviteMemberDto } from './dto/invite-member.dto';
 import { UpdateMembershipStatusDto } from './dto/update-membership-status.dto';
@@ -45,19 +30,9 @@ export class OrganizationsController {
     return this.organizationsService.getOrganizations(req.user.sub);
   }
 
-  @ApiOperation({ summary: 'Create Organization' })
-  @UseGuards(JwtAuthGuard)
-  @Post()
-  createOrganization(
-    @Req() req: RequestWithAuth,
-    @Body() dto: { name: string; slug: string },
-  ) {
-    return this.organizationsService.create(req.user.sub, dto);
-  }
-
   @ApiOperation({ summary: 'Update Organization' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('organization.handle')
+  @RequirePermissions('organization.updated')
   @Patch(':orgId')
   updateOrganization(
     @Param('orgId') organizationId: string,
@@ -69,7 +44,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Delete Organization' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('organization.handle')
+  @RequirePermissions('organization.deleted')
   @Delete(':orgId')
   removeOrganization(
     @Param('orgId') organizationId: string,
@@ -80,7 +55,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Invite Member' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.handle')
+  @RequirePermissions('member.invited')
   @Post(':orgId/invitations')
   inviteMember(
     @Param('orgId') organizationId: string,
@@ -96,7 +71,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'List Organization Members' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.view')
+  @RequirePermissions('member.invited')
   @Get(':orgId/members')
   listMembers(@Param('orgId') organizationId: string) {
     return this.organizationsService.listMembers(organizationId);
@@ -104,22 +79,19 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Get Membership Details' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.handle')
+  @RequirePermissions('member.invited')
   @Get(':orgId/members/:membershipId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   getMemberDetails(
     @Param('orgId') organizationId: string,
     @Param('membershipId') membershipId: string,
   ) {
-    return this.organizationsService.getMemberDetails(
-      organizationId,
-      membershipId,
-    );
+    return this.organizationsService.getMemberDetails(organizationId, membershipId);
   }
 
   @ApiOperation({ summary: 'Update Membership Status' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.handle')
+  @RequirePermissions('member.suspended')
   @Patch(':orgId/members/:membershipId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   updateMemberStatus(
@@ -128,17 +100,12 @@ export class OrganizationsController {
     @Body() dto: UpdateMembershipStatusDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.updateMemberStatus(
-      organizationId,
-      membershipId,
-      dto,
-      req.user.sub,
-    );
+    return this.organizationsService.updateMemberStatus(organizationId, membershipId, dto, req.user.sub);
   }
 
   @ApiOperation({ summary: 'Remove Member' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.handle')
+  @RequirePermissions('member.removed')
   @Delete(':orgId/members/:membershipId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   removeMember(
@@ -146,11 +113,7 @@ export class OrganizationsController {
     @Param('membershipId') membershipId: string,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.removeMember(
-      organizationId,
-      membershipId,
-      req.user.sub,
-    );
+    return this.organizationsService.removeMember(organizationId, membershipId, req.user.sub);
   }
 
   @ApiOperation({ summary: 'Assign Role to Membership' })
@@ -164,12 +127,7 @@ export class OrganizationsController {
     @Body() dto: AssignRoleDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.assignRole(
-      organizationId,
-      membershipId,
-      dto.roleId,
-      req.user.sub,
-    );
+    return this.organizationsService.assignRole(organizationId, membershipId, dto.roleId, req.user.sub);
   }
 
   @ApiOperation({ summary: 'Remove Role from Membership' })
@@ -184,11 +142,6 @@ export class OrganizationsController {
     @Param('roleId') roleId: string,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.removeRole(
-      organizationId,
-      membershipId,
-      roleId,
-      req.user.sub,
-    );
+    return this.organizationsService.removeRole(organizationId, membershipId, roleId, req.user.sub);
   }
 }

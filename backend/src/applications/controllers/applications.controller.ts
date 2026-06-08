@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ApplicationsService } from '../services/applications.service';
 import { CreateApplicationDto } from '../dto/create-application.dto';
 import { UpdateApplicationDto } from '../dto/update-application.dto';
@@ -39,78 +24,53 @@ export class ApplicationsController {
 
   @ApiOperation({ summary: 'Create Application' })
   @Post()
-  @RequirePermissions('application.handle')
+  @RequirePermissions('application.created')
   create(
-    @Param('orgId') organizationId: string,
+    @Param('orgId') orgId: string,
     @Body() createApplicationDto: CreateApplicationDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.applicationsService.create(
-      organizationId,
-      createApplicationDto,
-      req.user.sub,
-    );
+    return this.applicationsService.create(orgId, createApplicationDto, req.user.sub);
   }
 
   @ApiOperation({ summary: 'List Applications' })
   @Get()
-  @RequirePermissions('application.view')
-  findAll(@Param('orgId') organizationId: string) {
-    return this.applicationsService.findAll(organizationId);
-  }
-
-  @ApiOperation({ summary: 'Get Application Stats' })
-  @Get(':appId/stats')
-  @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.view')
-  getStats(
-    @Param('orgId') orgId: string,
-    @Param('appId') appId: string,
-  ) {
-    return this.applicationsService.getStats(orgId, appId);
+  @RequirePermissions('application.created')
+  findAll(@Param('orgId') orgId: string) {
+    return this.applicationsService.findAll(orgId);
   }
 
   @ApiOperation({ summary: 'Get Application Details' })
   @Get(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.view')
-  findOne(@Param('orgId') organizationId: string, @Param('appId') appId: string) {
-    return this.applicationsService.findOne(organizationId, appId);
+  @RequirePermissions('application.created')
+  findOne(@Param('orgId') orgId: string, @Param('appId') appId: string) {
+    return this.applicationsService.findOne(orgId, appId);
   }
 
   @ApiOperation({ summary: 'Update Application' })
   @Patch(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.handle')
+  @RequirePermissions('application.updated')
   update(
-    @Param('orgId') organizationId: string,
+    @Param('orgId') orgId: string,
     @Param('appId') appId: string,
     @Body() updateApplicationDto: UpdateApplicationDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.applicationsService.update(
-      organizationId,
-      appId,
-      updateApplicationDto,
-      req.user.sub,
-    );
+    return this.applicationsService.update(orgId, appId, updateApplicationDto, req.user.sub);
   }
 
   @ApiOperation({ summary: 'Delete Application' })
   @Delete(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.handle')
+  @RequirePermissions('application.deleted')
   async remove(
-
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
     @Req() req: RequestWithAuth,
   ) {
-    const application = await this.applicationsService.remove(
-      orgId,
-      appId,
-      req.user.sub,
-    );
+    const application = await this.applicationsService.remove(orgId, appId, req.user.sub);
     return {
       success: true,
       application,

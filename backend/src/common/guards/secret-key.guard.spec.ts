@@ -34,16 +34,12 @@ describe('SecretKeyGuard', () => {
     });
 
     it('should throw UnauthorizedException if API key is missing', () => {
-      expect(() => guard.canActivate(mockContext)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.canActivate(mockContext)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if API key is not a secret key', () => {
       mockRequest.headers['x-api-key'] = 'pk_live_123';
-      expect(() => guard.canActivate(mockContext)).toThrow(
-        'This endpoint requires a Secret API Key',
-      );
+      expect(() => guard.canActivate(mockContext)).toThrow('This endpoint requires a Secret API Key');
     });
 
     it('should return true if API key is a secret key', () => {

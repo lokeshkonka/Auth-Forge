@@ -3,13 +3,7 @@ import { AuditService } from '../services/audit.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Management Dashboard')
 @ApiBearerAuth('Member-JWT')
@@ -23,7 +17,7 @@ export class AuditController {
   @Get()
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
   @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
-  @RequirePermissions('audit.view')
+  @RequirePermissions('audit.read')
   async getAuditLogs(
     @Param('orgId') orgId: string,
     @Query('limit') limit?: string,

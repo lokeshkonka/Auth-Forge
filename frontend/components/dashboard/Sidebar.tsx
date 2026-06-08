@@ -18,8 +18,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { useDashboard } from '@/context/DashboardContext';
-
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
@@ -28,7 +26,6 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, setIsCollapsed, orgSlug }: SidebarProps) {
   const pathname = usePathname();
-  const { setCurrentApp } = useDashboard();
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
@@ -85,7 +82,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, orgSlug }: SidebarProps) 
           <Link
             key={item.name}
             href={item.href}
-            onClick={() => setCurrentApp(null)}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group relative whitespace-nowrap",
               pathname === item.href 
@@ -121,7 +117,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, orgSlug }: SidebarProps) 
           <Link
             key={item.name}
             href={item.href}
-            onClick={() => setCurrentApp(null)}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group relative whitespace-nowrap",
               pathname === item.href 

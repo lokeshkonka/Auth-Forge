@@ -2,30 +2,15 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAppRoleDto {
-  @ApiProperty({
-    example: 'Banker',
-    description: 'The name of the application role',
-  })
+  @ApiProperty({ example: 'Banker', description: 'The name of the application role' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({
-    example: 'Access to financial records',
-    description: 'A brief description of the role',
-  })
+  @ApiPropertyOptional({ example: 'Access to financial records', description: 'A brief description of the role' })
   @IsString()
   @IsOptional()
   description?: string;
-
-  @ApiPropertyOptional({
-    type: [String],
-    example: ['uuid-1', 'uuid-2'],
-    description: 'Array of application permission IDs',
-  })
-  @IsOptional()
-  @IsString({ each: true })
-  permissionIds?: string[];
 }
 
 export class UpdateAppRoleDto {
@@ -38,13 +23,4 @@ export class UpdateAppRoleDto {
   @IsString()
   @IsOptional()
   description?: string;
-
-  @ApiPropertyOptional({
-    type: [String],
-    example: ['uuid-1', 'uuid-2'],
-    description: 'Array of application permission IDs',
-  })
-  @IsOptional()
-  @IsString({ each: true })
-  permissionIds?: string[];
 }

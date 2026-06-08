@@ -29,11 +29,7 @@ export class InvitationsService {
       },
     });
 
-    if (
-      !invitation ||
-      invitation.status !== 'PENDING' ||
-      invitation.expiresAt <= new Date()
-    ) {
+    if (!invitation || invitation.status !== 'PENDING' || invitation.expiresAt <= new Date()) {
       throw new NotFoundException({
         statusCode: 404,
         error: 'INVITATION_NOT_FOUND',
@@ -49,10 +45,7 @@ export class InvitationsService {
       },
     });
 
-    if (
-      !member ||
-      member.email.toLowerCase() !== invitation.email.toLowerCase()
-    ) {
+    if (!member || member.email.toLowerCase() !== invitation.email.toLowerCase()) {
       throw new UnauthorizedException({
         statusCode: 401,
         error: 'INVITATION_EMAIL_MISMATCH',
@@ -65,14 +58,14 @@ export class InvitationsService {
         memberId_organizationId: {
           memberId,
           organizationId: invitation.organizationId,
-        },
-      },
+        }
+      }
     });
 
     if (existingMembership) {
       await this.prisma.invitation.update({
         where: { id: invitation.id },
-        data: { status: 'REVOKED' },
+        data: { status: 'REVOKED' }
       });
 
       throw new ConflictException({
@@ -91,18 +84,18 @@ export class InvitationsService {
             create: [
               {
                 roleId: invitation.roleId,
-              },
-            ],
-          },
-        },
+              }
+            ]
+          }
+        }
       }),
       this.prisma.invitation.update({
         where: { id: invitation.id },
         data: {
           status: 'ACCEPTED',
           acceptedAt: new Date(),
-        },
-      }),
+        }
+      })
     ]);
 
     await this.auditService.createLog({
@@ -127,14 +120,14 @@ export class InvitationsService {
       where: {
         organizationId,
         status: 'PENDING',
-        expiresAt: { gt: new Date() },
-      },
+        expiresAt: { gt: new Date() }
+      }
     });
   }
 
   async revokeInvitation(organizationId: string, id: string, actorId?: string) {
     const invitation = await this.prisma.invitation.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId }
     });
 
     if (!invitation || invitation.status !== 'PENDING') {
@@ -143,7 +136,7 @@ export class InvitationsService {
 
     const updated = await this.prisma.invitation.update({
       where: { id },
-      data: { status: 'REVOKED' },
+      data: { status: 'REVOKED' }
     });
 
     await this.auditService.createLog({

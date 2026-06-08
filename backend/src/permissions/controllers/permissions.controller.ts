@@ -29,10 +29,7 @@ export class PermissionsController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermissions('permission.read')
   @Get('organizations/:orgId/permissions')
-  findByOrganization(
-    @Param('orgId') orgId: string,
-    @Req() req: RequestWithAuth,
-  ) {
+  findByOrganization(@Param('orgId') orgId: string, @Req() req: RequestWithAuth) {
     return this.permissionsService.findByOrganization(orgId, req.user.sub);
   }
 }
