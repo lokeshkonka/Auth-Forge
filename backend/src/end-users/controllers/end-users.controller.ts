@@ -143,7 +143,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'End-User Login' })
   @ApiSecurity('PublishableKey')
   @UseGuards(ApiKeyAuthGuard)
-  @Throttle({ login: { limit: 10, ttl: 60000 } })
+  @Throttle({ login: { limit: 10000, ttl: 60000 } })
   @Post('auth/login')
   login(
     @Param('applicationSlug') applicationSlug: string,
@@ -251,5 +251,8 @@ export class EndUsersController {
   ) {
     this.validateSlug(req, applicationSlug);
     return this.endUsersService.revokeSession(req.user.userId, id);
+  }
+}
+
   }
 }

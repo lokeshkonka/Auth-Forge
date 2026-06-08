@@ -54,11 +54,11 @@ import { RedisModule } from './database/redis.module';
         return {
           storage: new ThrottlerStorageRedisService(connection),
           throttlers: [
-            { name: 'global', ttl: 60000, limit: 100 },
-            { name: 'signup', ttl: 60000, limit: 5 },
-            { name: 'login', ttl: 60000, limit: 10 },
-            { name: 'refresh', ttl: 60000, limit: 20 },
-            { name: 'secret', ttl: 60000, limit: 100 },
+            { name: 'global', ttl: 60000, limit: 10000 },
+            { name: 'signup', ttl: 60000, limit: 10000 },
+            { name: 'login', ttl: 60000, limit: 10000 },
+            { name: 'refresh', ttl: 60000, limit: 10000 },
+            { name: 'secret', ttl: 60000, limit: 10000 },
           ],
         };
       },
