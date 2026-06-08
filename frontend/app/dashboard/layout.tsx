@@ -23,7 +23,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthLoading, user, router]);
 
-  if (isAuthLoading || (isDashboardLoading && organizations.length === 0)) {
+  if (isAuthLoading || (isDashboardLoading && organizations.length === 0 && !currentOrg)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 text-primary-brand animate-spin" />

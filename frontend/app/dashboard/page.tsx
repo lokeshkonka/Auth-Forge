@@ -33,7 +33,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchApps = async () => {
-      if (!currentOrg) return;
+      if (!currentOrg) {
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
         const apps = await api.get(`/organizations/${currentOrg.id}/applications`);
