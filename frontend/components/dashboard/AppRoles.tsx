@@ -24,6 +24,13 @@ interface AppRole {
   id: string;
   name: string;
   description?: string;
+  permissions?: {
+    permission: {
+      id: string;
+      key: string;
+      name: string;
+    };
+  }[];
   createdAt: string;
   updatedAt: string;
 }
