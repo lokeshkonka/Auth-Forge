@@ -39,7 +39,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshOrgs = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       const memberships = await api.get('/organizations');

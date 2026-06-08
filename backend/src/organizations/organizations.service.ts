@@ -25,6 +25,65 @@ export class OrganizationsService {
     return this.membersService.findMembershipsByMemberId(memberId);
   }
 
+  async create(memberId: string, dto: { name: string; slug: string }) {
+    const slug = dto.slug.trim().toLowerCase();
+
+    const existing = await this.prisma.organization.findUnique({
+      where: { slug },
+    });
+
+    if (existing) {
+      throw new ConflictException('Organization slug is already taken');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const organization = await tx.organization.create({
+        data: {
+          name: dto.name.trim(),
+          slug,
+          ownerId: memberId,
+        },
+      });
+
+      const membership = await tx.membership.create({
+        data: {
+          memberId,
+          organizationId: organization.id,
+          isOwner: true,
+        },
+      });
+
+      const ownerRole = await tx.role.create({
+        data: {
+          organizationId: organization.id,
+          name: 'Owner',
+          description: 'Full access to the organization',
+          isSystemRole: true,
+        },
+      });
+
+      await tx.memberRole.create({
+        data: {
+          membershipId: membership.id,
+          roleId: ownerRole.id,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          organizationId: organization.id,
+          actorId: memberId,
+          action: 'organization.created',
+          resourceType: 'Organization',
+          resourceId: organization.id,
+          newValue: { name: organization.name, slug: organization.slug },
+        },
+      });
+
+      return organization;
+    });
+  }
+
   async update(
     organizationId: string,
     dto: { name?: string },

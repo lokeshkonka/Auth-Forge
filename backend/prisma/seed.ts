@@ -3,66 +3,38 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const PERMISSION_CATALOG = [
-  // Authentication
-  { key: 'customer.signup', name: 'Signup', category: 'Authentication', description: 'Permission to signup' },
-  { key: 'customer.login', name: 'Login', category: 'Authentication', description: 'Permission to login' },
-  { key: 'customer.logout', name: 'Logout', category: 'Authentication', description: 'Permission to logout' },
+  // Organization Management
+  { key: 'organization.handle', name: 'Handle Organization', category: 'Organization', description: 'Update organization details or delete organization', sortOrder: 1 },
+  { key: 'organization.view', name: 'View Organization', category: 'Organization', description: 'View organization details', sortOrder: 2 },
+  
+  // Member Management
+  { key: 'member.handle', name: 'Handle Members', category: 'Members', description: 'Invite, remove, or suspend organization members', sortOrder: 10 },
+  { key: 'member.view', name: 'View Members', category: 'Members', description: 'View organization members', sortOrder: 11 },
+  
+  // Role & Permission Management
+  { key: 'role.handle', name: 'Handle Roles', category: 'Roles', description: 'Create, update, and delete organization roles', sortOrder: 20 },
+  { key: 'role.view', name: 'View Roles', category: 'Roles', description: 'View organization roles', sortOrder: 21 },
+  { key: 'permission.handle', name: 'Handle Permissions', category: 'Permissions', description: 'Manage system-wide permissions', sortOrder: 25 },
+  { key: 'permission.read', name: 'View Permissions', category: 'Permissions', description: 'View system-wide permissions', sortOrder: 26 },
 
-  // Organizations
-  { key: 'organization.created', name: 'Create Organization', category: 'Organizations', description: 'Permission to create organization' },
-  { key: 'organization.updated', name: 'Update Organization', category: 'Organizations', description: 'Permission to update organization' },
-  { key: 'organization.deleted', name: 'Delete Organization', category: 'Organizations', description: 'Permission to delete organization' },
+  // Application Management
+  { key: 'application.handle', name: 'Handle Applications', category: 'Applications', description: 'Create, update, and delete applications', sortOrder: 30 },
+  { key: 'application.view', name: 'View Applications', category: 'Applications', description: 'View organization applications', sortOrder: 31 },
+  { key: 'app_role.handle', name: 'Handle App Roles', category: 'Application Roles', description: 'Manage roles and assignments within applications', sortOrder: 35 },
+  { key: 'app_permission.handle', name: 'Handle App Permissions', category: 'Application Permissions', description: 'Manage permissions within applications', sortOrder: 36 },
 
-  // Members
-  { key: 'member.invited', name: 'Invite Member', category: 'Members', description: 'Permission to invite members' },
-  { key: 'member.accepted', name: 'Accept Invitation', category: 'Members', description: 'Permission to accept invitations' },
-  { key: 'member.suspended', name: 'Suspend Member', category: 'Members', description: 'Permission to suspend members' },
-  { key: 'member.removed', name: 'Remove Member', category: 'Members', description: 'Permission to remove members' },
-
-  // Roles
-  { key: 'role.created', name: 'Create Role', category: 'Roles', description: 'Permission to create roles' },
-  { key: 'role.updated', name: 'Update Role', category: 'Roles', description: 'Permission to update roles' },
-  { key: 'role.deleted', name: 'Delete Role', category: 'Roles', description: 'Permission to delete roles' },
-  { key: 'role.assigned', name: 'Assign Role', category: 'Roles', description: 'Permission to assign roles' },
-
-  // Applications
-  { key: 'application.created', name: 'Create Application', category: 'Applications', description: 'Permission to create applications' },
-  { key: 'application.updated', name: 'Update Application', category: 'Applications', description: 'Permission to update applications' },
-  { key: 'application.deleted', name: 'Delete Application', category: 'Applications', description: 'Permission to delete applications' },
-
-  // API Keys
-  { key: 'apikey.created', name: 'Create API Key', category: 'API Keys', description: 'Permission to create API keys' },
-  { key: 'apikey.revoked', name: 'Revoke API Key', category: 'API Keys', description: 'Permission to revoke API keys' },
-
-  // Application Roles
-  { key: 'app_role.created', name: 'Create App Role', category: 'Application Roles', description: 'Permission to create application roles' },
-  { key: 'app_role.updated', name: 'Update App Role', category: 'Application Roles', description: 'Permission to update application roles' },
-  { key: 'app_role.deleted', name: 'Delete App Role', category: 'Application Roles', description: 'Permission to delete application roles' },
-  { key: 'app_role.assigned', name: 'Assign App Role', category: 'Application Roles', description: 'Permission to assign application roles' },
-  { key: 'app_role.unassigned', name: 'Unassign App Role', category: 'Application Roles', description: 'Permission to unassign application roles' },
-
-  // End Users
-  { key: 'end_user.created', name: 'Create End User', category: 'End Users', description: 'Permission to create end users' },
-  { key: 'end_user.updated', name: 'Update End User', category: 'End Users', description: 'Permission to update end users' },
-  { key: 'end_user.deleted', name: 'Delete End User', category: 'End Users', description: 'Permission to delete end users' },
-  { key: 'bulk_import.completed', name: 'Bulk Import', category: 'End Users', description: 'Permission to perform bulk imports' },
+  // API Key Management
+  { key: 'apikey.handle', name: 'Handle API Keys', category: 'API Keys', description: 'Create and revoke API keys', sortOrder: 40 },
+  { key: 'apikey.view', name: 'View API Keys', category: 'API Keys', description: 'View application API keys', sortOrder: 41 },
 
   // Audit Logs
-  { key: 'audit.read', name: 'Read Audit Logs', category: 'Audit Logs', description: 'Permission to view audit logs' },
-
-  // Permissions
-  { key: 'permission.read', name: 'Read Permissions', category: 'Permissions', description: 'Permission to view available permissions' },
-
-  // Sessions
-  { key: 'session.revoked', name: 'Revoke Session', category: 'Sessions', description: 'Permission to revoke session' },
-  { key: 'session.revoked_all', name: 'Revoke All Sessions', category: 'Sessions', description: 'Permission to revoke all sessions' },
+  { key: 'audit.view', name: 'View Audit Logs', category: 'Audit Logs', description: 'View organization and application audit logs', sortOrder: 50 },
+  
+  // Session Management
+  { key: 'session.handle', name: 'Handle Sessions', category: 'Sessions', description: 'Manage member sessions', sortOrder: 80 },
 ];
 
 async function main() {
-  console.log('Cleaning up existing permissions...');
-  await prisma.rolePermission.deleteMany({});
-  await prisma.permission.deleteMany({});
-
   console.log('Seeding permissions from catalog...');
 
   for (const perm of PERMISSION_CATALOG) {
@@ -72,12 +44,113 @@ async function main() {
         name: perm.name,
         category: perm.category,
         description: perm.description,
+        sortOrder: perm.sortOrder,
       },
       create: perm,
     });
   }
 
-  console.log(`Seeded ${PERMISSION_CATALOG.length} permissions.`);
+  console.log(`Upserted ${PERMISSION_CATALOG.length} permissions.`);
+
+  console.log('Ensuring all organizations have correct owner memberships and full access roles...');
+  const organizations = await prisma.organization.findMany({
+    include: {
+      memberships: true,
+    }
+  });
+  const allPermissions = await prisma.permission.findMany();
+
+  for (const org of organizations) {
+    // 1. Fix isOwner flag on membership
+    // If org has an ownerId but the membership doesn't have isOwner=true, fix it
+    if (org.ownerId) {
+      await prisma.membership.updateMany({
+        where: {
+          organizationId: org.id,
+          memberId: org.ownerId,
+        },
+        data: {
+          isOwner: true,
+        },
+      });
+    } else if (org.memberships.length > 0) {
+      // If org has no ownerId but has members, pick the first member as owner
+      const firstMember = org.memberships[0];
+      await prisma.organization.update({
+        where: { id: org.id },
+        data: { ownerId: firstMember.memberId },
+      });
+      await prisma.membership.update({
+        where: { id: firstMember.id },
+        data: { isOwner: true },
+      });
+      console.log(`Assigned first member ${firstMember.memberId} as owner for organization ${org.name}`);
+    }
+
+    // 2. Ensure "Owner" role exists and has all permissions
+    const ownerRole = await prisma.role.upsert({
+      where: {
+        organizationId_name: {
+          organizationId: org.id,
+          name: 'Owner',
+        },
+      },
+      update: {
+        isSystemRole: true,
+        description: 'Full administrative access',
+      },
+      create: {
+        organizationId: org.id,
+        name: 'Owner',
+        description: 'Full administrative access',
+        isSystemRole: true,
+      },
+    });
+
+    // 3. Link all permissions to Owner role
+    const currentPermissions = await prisma.rolePermission.findMany({
+      where: { roleId: ownerRole.id },
+    });
+    
+    const currentPermissionIds = new Set(currentPermissions.map(cp => cp.permissionId));
+    
+    for (const perm of allPermissions) {
+      if (!currentPermissionIds.has(perm.id)) {
+        await prisma.rolePermission.create({
+          data: {
+            roleId: ownerRole.id,
+            permissionId: perm.id,
+          },
+        });
+      }
+    }
+
+    // 4. Ensure the owner actually HAS the Owner role
+    const ownerMembership = await prisma.membership.findFirst({
+      where: {
+        organizationId: org.id,
+        isOwner: true,
+      }
+    });
+
+    if (ownerMembership) {
+      await prisma.memberRole.upsert({
+        where: {
+          membershipId_roleId: {
+            membershipId: ownerMembership.id,
+            roleId: ownerRole.id,
+          }
+        },
+        update: {},
+        create: {
+          membershipId: ownerMembership.id,
+          roleId: ownerRole.id,
+        }
+      });
+    }
+  }
+
+  console.log(`Synced permissions and roles for ${organizations.length} organizations.`);
 }
 
 main()

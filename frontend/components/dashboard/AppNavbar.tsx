@@ -28,6 +28,7 @@ export function AppNavbar({ isSidebarCollapsed, className }: AppNavbarProps) {
     { name: 'Overview', icon: LayoutGrid, id: 'overview' },
     { name: 'Users', icon: Users, id: 'users' },
     { name: 'Roles', icon: ShieldCheck, id: 'roles' },
+    { name: 'Permissions', icon: Key, id: 'permissions' },
     { name: 'Audit Logs', icon: ReceiptText, id: 'audit-logs' },
     { name: 'API Keys', icon: Key, id: 'api-keys' },
     { name: 'Docs', icon: FileText, id: 'docs' },

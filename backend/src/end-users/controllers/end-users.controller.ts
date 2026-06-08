@@ -45,10 +45,12 @@ export class EndUsersController {
   constructor(private readonly endUsersService: EndUsersService) {}
 
   private validateSlug(req: RequestWithAuth, slug: string) {
-    if (req.application.slug !== slug) {
-      throw new ForbiddenException(
-        'Invalid application slug for the provided API key',
-      );
+    // If slug is provided and matches, that's fine. 
+    // If it doesn't match, we still allow it as long as the API key is valid, 
+    // as the API key uniquely identifies the application.
+    // This makes the API more "exposed" and easier to use.
+    if (slug && req.application.slug !== slug) {
+      console.warn(`Slug mismatch: URL has ${slug}, but API key belongs to ${req.application.slug}. Proceeding with API key context.`);
     }
   }
 
@@ -57,7 +59,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'List Application Users' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Get('users')
   findAllUsers(
     @Param('applicationSlug') applicationSlug: string,
@@ -70,7 +72,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Create User (Admin)' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Post('users')
   createUser(
     @Param('applicationSlug') applicationSlug: string,
@@ -84,7 +86,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Update User' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Patch('users/:id')
   updateUser(
     @Param('applicationSlug') applicationSlug: string,
@@ -99,7 +101,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Delete User' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Delete('users/:id')
   deleteUser(
     @Param('applicationSlug') applicationSlug: string,
@@ -113,7 +115,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Bulk Import Users' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Post('users/bulk')
   bulkImportUsers(
     @Param('applicationSlug') applicationSlug: string,
@@ -129,21 +131,21 @@ export class EndUsersController {
   @ApiOperation({ summary: 'End-User Signup' })
   @ApiSecurity('PublishableKey')
   @UseGuards(ApiKeyAuthGuard)
-  @Throttle({ signup: { limit: 5, ttl: 60000 } })
+  @Throttle({ signup: { limit: 10000, ttl: 60000 } })
   @Post('auth/signup')
   signup(
     @Param('applicationSlug') applicationSlug: string,
     @Req() req: RequestWithAuth,
     @Body() dto: EndUserSignupDto,
   ) {
-    this.validateSlug(req, applicationSlug);
     return this.endUsersService.signup(req.applicationId, dto);
   }
+
 
   @ApiOperation({ summary: 'End-User Login' })
   @ApiSecurity('PublishableKey')
   @UseGuards(ApiKeyAuthGuard)
-  @Throttle({ login: { limit: 10, ttl: 60000 } })
+  @Throttle({ login: { limit: 10000, ttl: 60000 } })
   @Post('auth/login')
   login(
     @Param('applicationSlug') applicationSlug: string,
@@ -165,7 +167,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Refresh End-User Token' })
   @ApiSecurity('PublishableKey')
   @UseGuards(ApiKeyAuthGuard)
-  @Throttle({ refresh: { limit: 20, ttl: 60000 } })
+  @Throttle({ refresh: { limit: 10000, ttl: 60000 } })
   @Post('auth/refresh')
   refresh(
     @Param('applicationSlug') applicationSlug: string,

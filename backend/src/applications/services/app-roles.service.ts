@@ -20,7 +20,7 @@ export class AppRolesService {
     organizationId: string,
     actorId?: string,
   ) {
-    const { name, description } = dto;
+    const { name, description, permissionIds } = dto;
 
     const existing = await this.prisma.applicationRole.findUnique({
       where: {
@@ -42,6 +42,21 @@ export class AppRolesService {
         applicationId: appId,
         name,
         description,
+        permissions:
+          permissionIds && permissionIds.length > 0
+            ? {
+                create: permissionIds.map((id) => ({
+                  permission: { connect: { id } },
+                })),
+              }
+            : undefined,
+      },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
       },
     });
 
@@ -60,12 +75,26 @@ export class AppRolesService {
   async findAll(appId: string) {
     return this.prisma.applicationRole.findMany({
       where: { applicationId: appId },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
     });
   }
 
   async findOne(appId: string, id: string) {
     const role = await this.prisma.applicationRole.findFirst({
       where: { id, applicationId: appId },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
     });
 
     if (!role) {
@@ -83,12 +112,27 @@ export class AppRolesService {
     actorId?: string,
   ) {
     const role = await this.findOne(appId, id);
+    const { permissionIds, ...rest } = dto;
 
     const updated = await this.prisma.applicationRole.update({
       where: { id },
       data: {
-        name: dto.name,
-        description: dto.description,
+        ...rest,
+        ...(permissionIds && {
+          permissions: {
+            deleteMany: {},
+            create: permissionIds.map((id) => ({
+              permission: { connect: { id } },
+            })),
+          },
+        }),
+      },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
       },
     });
 

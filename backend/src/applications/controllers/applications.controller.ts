@@ -39,14 +39,14 @@ export class ApplicationsController {
 
   @ApiOperation({ summary: 'Create Application' })
   @Post()
-  @RequirePermissions('application.created')
+  @RequirePermissions('application.handle')
   create(
-    @Param('orgId') orgId: string,
+    @Param('orgId') organizationId: string,
     @Body() createApplicationDto: CreateApplicationDto,
     @Req() req: RequestWithAuth,
   ) {
     return this.applicationsService.create(
-      orgId,
+      organizationId,
       createApplicationDto,
       req.user.sub,
     );
@@ -54,31 +54,42 @@ export class ApplicationsController {
 
   @ApiOperation({ summary: 'List Applications' })
   @Get()
-  @RequirePermissions('application.created')
-  findAll(@Param('orgId') orgId: string) {
-    return this.applicationsService.findAll(orgId);
+  @RequirePermissions('application.view')
+  findAll(@Param('orgId') organizationId: string) {
+    return this.applicationsService.findAll(organizationId);
+  }
+
+  @ApiOperation({ summary: 'Get Application Stats' })
+  @Get(':appId/stats')
+  @ApiParam({ name: 'appId', description: 'Application ID' })
+  @RequirePermissions('application.view')
+  getStats(
+    @Param('orgId') orgId: string,
+    @Param('appId') appId: string,
+  ) {
+    return this.applicationsService.getStats(orgId, appId);
   }
 
   @ApiOperation({ summary: 'Get Application Details' })
   @Get(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.created')
-  findOne(@Param('orgId') orgId: string, @Param('appId') appId: string) {
-    return this.applicationsService.findOne(orgId, appId);
+  @RequirePermissions('application.view')
+  findOne(@Param('orgId') organizationId: string, @Param('appId') appId: string) {
+    return this.applicationsService.findOne(organizationId, appId);
   }
 
   @ApiOperation({ summary: 'Update Application' })
   @Patch(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.updated')
+  @RequirePermissions('application.handle')
   update(
-    @Param('orgId') orgId: string,
+    @Param('orgId') organizationId: string,
     @Param('appId') appId: string,
     @Body() updateApplicationDto: UpdateApplicationDto,
     @Req() req: RequestWithAuth,
   ) {
     return this.applicationsService.update(
-      orgId,
+      organizationId,
       appId,
       updateApplicationDto,
       req.user.sub,
@@ -88,8 +99,9 @@ export class ApplicationsController {
   @ApiOperation({ summary: 'Delete Application' })
   @Delete(':appId')
   @ApiParam({ name: 'appId', description: 'Application ID' })
-  @RequirePermissions('application.deleted')
+  @RequirePermissions('application.handle')
   async remove(
+
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
     @Req() req: RequestWithAuth,

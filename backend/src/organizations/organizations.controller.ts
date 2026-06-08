@@ -45,9 +45,19 @@ export class OrganizationsController {
     return this.organizationsService.getOrganizations(req.user.sub);
   }
 
+  @ApiOperation({ summary: 'Create Organization' })
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  createOrganization(
+    @Req() req: RequestWithAuth,
+    @Body() dto: { name: string; slug: string },
+  ) {
+    return this.organizationsService.create(req.user.sub, dto);
+  }
+
   @ApiOperation({ summary: 'Update Organization' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('organization.updated')
+  @RequirePermissions('organization.handle')
   @Patch(':orgId')
   updateOrganization(
     @Param('orgId') organizationId: string,
@@ -59,7 +69,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Delete Organization' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('organization.deleted')
+  @RequirePermissions('organization.handle')
   @Delete(':orgId')
   removeOrganization(
     @Param('orgId') organizationId: string,
@@ -70,7 +80,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Invite Member' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.invited')
+  @RequirePermissions('member.handle')
   @Post(':orgId/invitations')
   inviteMember(
     @Param('orgId') organizationId: string,
@@ -86,7 +96,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'List Organization Members' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.invited')
+  @RequirePermissions('member.view')
   @Get(':orgId/members')
   listMembers(@Param('orgId') organizationId: string) {
     return this.organizationsService.listMembers(organizationId);
@@ -94,7 +104,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Get Membership Details' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.invited')
+  @RequirePermissions('member.handle')
   @Get(':orgId/members/:membershipId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   getMemberDetails(
@@ -109,7 +119,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Update Membership Status' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.suspended')
+  @RequirePermissions('member.handle')
   @Patch(':orgId/members/:membershipId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   updateMemberStatus(
@@ -128,7 +138,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Remove Member' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.removed')
+  @RequirePermissions('member.handle')
   @Delete(':orgId/members/:membershipId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   removeMember(

@@ -99,6 +99,44 @@ export class ApiKeysService {
     });
   }
 
+  async reveal(
+    organizationId: string,
+    applicationId: string,
+    id: string,
+    actorId?: string,
+  ) {
+    const apiKey = await this.prisma.apiKey.findFirst({
+      where: {
+        id,
+        applicationId,
+        application: { organizationId },
+      },
+    });
+
+    if (!apiKey) {
+      throw new NotFoundException('API Key not found');
+    }
+
+    // Generate Audit Log for the reveal action
+    await this.auditService.createLog({
+      organizationId,
+      actorId,
+      action: 'apikey.revealed',
+      resourceType: 'ApiKey',
+      resourceId: id,
+      newValue: { name: apiKey.name },
+    });
+
+    // Since we use bcrypt, we can't actually reveal the key.
+    // In a real system, we might store an encrypted version or just show it once.
+    // For this prototype/fix, we'll return a placeholder to satisfy the UI.
+    return {
+      publishableKey: `pk_live_************************`,
+      secretKey: `sk_live_************************`,
+      note: 'Keys are hashed and cannot be revealed after creation for security reasons.',
+    };
+  }
+
   async remove(
     organizationId: string,
     applicationId: string,

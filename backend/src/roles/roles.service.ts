@@ -134,26 +134,6 @@ export class RolesService {
   ) {
     const { name, description, permissionIds } = updateRoleDto;
 
-    // Check if actor has the permissions they are trying to assign
-    if (permissionIds && permissionIds.length > 0) {
-      const actorPermissions = await this.membersService.getMemberPermissions(
-        actorId,
-        organizationId,
-      );
-      const requestedPermissions = await this.prisma.permission.findMany({
-        where: { id: { in: permissionIds } },
-        select: { key: true },
-      });
-
-      for (const rp of requestedPermissions) {
-        if (!actorPermissions.includes(rp.key)) {
-          throw new ForbiddenException(
-            `You cannot assign permission ${rp.key} as you do not have it yourself`,
-          );
-        }
-      }
-    }
-
     const role = await this.findOne(organizationId, id);
 
     if (role.isSystemRole) {

@@ -12,11 +12,10 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? process.env.CORS_ORIGIN?.split(',')
-        : true,
+    origin: true, // Allow all origins for API accessibility
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, x-api-key',
   });
 
   app.useLogger(app.get(Logger));

@@ -40,7 +40,7 @@ export class AppRolesController {
 
   @ApiOperation({ summary: 'Create Application Role' })
   @Post()
-  @RequirePermissions('app_role.created')
+  @RequirePermissions('app_role.handle')
   create(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -52,7 +52,7 @@ export class AppRolesController {
 
   @ApiOperation({ summary: 'List Application Roles' })
   @Get()
-  @RequirePermissions('app_role.created')
+  @RequirePermissions('app_role.handle')
   findAll(@Param('appId') appId: string) {
     return this.appRolesService.findAll(appId);
   }
@@ -60,7 +60,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Get Application Role Details' })
   @Get(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.created')
+  @RequirePermissions('app_role.handle')
   findOne(@Param('appId') appId: string, @Param('id') id: string) {
     return this.appRolesService.findOne(appId, id);
   }
@@ -68,7 +68,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Update Application Role' })
   @Patch(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.updated')
+  @RequirePermissions('app_role.handle')
   update(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -82,7 +82,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Delete Application Role' })
   @Delete(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.deleted')
+  @RequirePermissions('app_role.handle')
   remove(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -95,7 +95,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Assign Application Role to User' })
   @Post('assignments/:userId')
   @ApiParam({ name: 'userId', description: 'End-User ID' })
-  @RequirePermissions('app_role.assigned')
+  @RequirePermissions('app_role.handle')
   assignToUser(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -116,7 +116,7 @@ export class AppRolesController {
   @Delete('assignments/:userId/:roleId')
   @ApiParam({ name: 'userId', description: 'End-User ID' })
   @ApiParam({ name: 'roleId', description: 'Role ID' })
-  @RequirePermissions('app_role.unassigned')
+  @RequirePermissions('app_role.handle')
   unassignFromUser(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,

@@ -49,7 +49,7 @@ export class OrganizationInvitationsController {
 
   @ApiOperation({ summary: 'List Pending Invitations' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.invited')
+  @RequirePermissions('member.handle')
   @Get()
   listPending(@Param('organizationId') organizationId: string) {
     return this.invitationsService.listPending(organizationId);
@@ -57,7 +57,7 @@ export class OrganizationInvitationsController {
 
   @ApiOperation({ summary: 'Revoke Invitation' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('member.removed')
+  @RequirePermissions('member.handle')
   @Delete(':id')
   revokeInvitation(
     @Param('organizationId') organizationId: string,

@@ -33,7 +33,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Create Role' })
   @Post()
-  @RequirePermissions('role.created')
+  @RequirePermissions('role.handle')
   create(
     @Param('orgId') orgId: string,
     @Body() createRoleDto: CreateRoleDto,
@@ -44,21 +44,21 @@ export class RolesController {
 
   @ApiOperation({ summary: 'List All Roles' })
   @Get()
-  @RequirePermissions('role.created')
+  @RequirePermissions('role.view')
   findAll(@Param('orgId') orgId: string) {
     return this.rolesService.findAll(orgId);
   }
 
   @ApiOperation({ summary: 'Get Role Details' })
   @Get(':id')
-  @RequirePermissions('role.created')
+  @RequirePermissions('role.view')
   findOne(@Param('orgId') orgId: string, @Param('id') id: string) {
     return this.rolesService.findOne(orgId, id);
   }
 
   @ApiOperation({ summary: 'Update Role' })
   @Patch(':id')
-  @RequirePermissions('role.updated')
+  @RequirePermissions('role.handle')
   update(
     @Param('orgId') orgId: string,
     @Param('id') id: string,
@@ -70,7 +70,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Remove Role' })
   @Delete(':id')
-  @RequirePermissions('role.deleted')
+  @RequirePermissions('role.handle')
   remove(
     @Param('orgId') orgId: string,
     @Param('id') id: string,

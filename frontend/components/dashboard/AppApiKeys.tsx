@@ -35,6 +35,7 @@ interface ApiKey {
   expiresAt?: string;
   publishableKey?: string; 
   secretKey?: string;      
+  note?: string;
 }
 
 export function AppApiKeys() {
@@ -193,18 +194,18 @@ export function AppApiKeys() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {keys.map((key) => (
-            <div key={key.id} className="auth-card group border border-border hover:border-text-secondary/30 transition-all flex flex-col h-full bg-[#141414] relative overflow-visible">
+            <div key={key.id} className="auth-card group border border-border hover:border-text-secondary/30 transition-all flex flex-col h-full bg-[#181818] relative overflow-visible shadow-lg">
               {/* Card Header */}
-              <div className="p-6 border-b border-border/50 flex justify-between items-start">
+              <div className="p-6 border-b border-border/50 flex justify-between items-start bg-surface-hover/20">
                 <div className="flex gap-4">
-                   <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-border text-text-secondary group-hover:text-primary-brand transition-colors shrink-0">
-                     <Terminal size={18} />
+                   <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center border border-border text-text-secondary group-hover:text-primary-brand transition-colors shrink-0">
+                     <Key size={18} />
                    </div>
                    <div className="space-y-1">
-                     <h3 className="text-sm font-bold text-text-primary uppercase tracking-tight truncate max-w-[150px]">{key.name}</h3>
+                     <h3 className="text-sm font-black text-text-primary uppercase tracking-tight truncate max-w-[150px]">{key.name}</h3>
                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                        <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Active</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                        <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Active & Secure</span>
                      </div>
                    </div>
                 </div>
@@ -213,8 +214,8 @@ export function AppApiKeys() {
                   <button 
                     onClick={() => setActiveMenuId(activeMenuId === key.id ? null : key.id)}
                     className={cn(
-                      "p-1.5 hover:bg-surface-hover rounded transition-all text-text-secondary",
-                      activeMenuId === key.id && "bg-surface-hover text-text-primary"
+                      "p-1.5 hover:bg-background rounded transition-all text-text-secondary border border-transparent",
+                      activeMenuId === key.id && "bg-background border-border text-text-primary"
                     )}
                   >
                     <MoreVertical size={16} />
@@ -223,14 +224,14 @@ export function AppApiKeys() {
                   {activeMenuId === key.id && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
-                      <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-border rounded-lg shadow-2xl z-40 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-surface border border-border rounded-lg shadow-2xl z-40 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                         <button 
                           onClick={() => { handleReveal(key); setActiveMenuId(null); }}
                           disabled={isRevealing}
                           className="w-full px-4 py-2.5 text-[11px] font-bold text-text-primary hover:bg-surface-hover flex items-center gap-3 transition-colors text-left"
                         >
-                          {isRevealing ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} className="text-text-secondary" />}
-                          View Credentials
+                          {isRevealing ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} className="text-primary-brand" />}
+                          View Key Details
                         </button>
                         <div className="h-px bg-border my-1" />
                         <button 
@@ -238,7 +239,7 @@ export function AppApiKeys() {
                           className="w-full px-4 py-2.5 text-[11px] font-bold text-error hover:bg-error/10 flex items-center gap-3 transition-colors text-left"
                         >
                           <Trash2 size={14} />
-                          Revoke Key
+                          Revoke Keypair
                         </button>
                       </div>
                     </>
@@ -247,29 +248,32 @@ export function AppApiKeys() {
               </div>
 
               {/* Card Body */}
-              <div className="p-6 grid grid-cols-2 gap-4">
+              <div className="p-6 grid grid-cols-2 gap-6">
                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase font-black text-text-secondary opacity-50 tracking-widest flex items-center gap-1.5">
-                      <Calendar size={10} />
-                      Created
+                    <p className="text-[9px] uppercase font-black text-text-secondary opacity-70 tracking-widest flex items-center gap-1.5">
+                      <Calendar size={10} className="text-primary-brand" />
+                      Created On
                     </p>
-                    <p className="text-[11px] text-text-primary font-mono">{new Date(key.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-text-primary font-bold">{new Date(key.createdAt).toLocaleDateString()}</p>
                  </div>
                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase font-black text-text-secondary opacity-50 tracking-widest flex items-center gap-1.5">
-                      <History size={10} />
+                    <p className="text-[9px] uppercase font-black text-text-secondary opacity-70 tracking-widest flex items-center gap-1.5">
+                      <Activity size={10} className="text-success" />
                       Last Used
                     </p>
-                    <p className="text-[11px] text-text-primary font-mono truncate">
+                    <p className="text-xs text-text-primary font-bold truncate">
                       {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
                     </p>
                  </div>
               </div>
 
               {/* Card Footer / Quick ID */}
-              <div className="mt-auto px-6 py-3 bg-surface/30 border-t border-border/30 flex justify-between items-center">
-                 <span className="text-[10px] font-mono text-text-secondary truncate pr-4">ID: {key.id}</span>
-                 <span className="text-[9px] font-bold uppercase text-primary-brand/50 tracking-tighter">Production</span>
+              <div className="mt-auto px-6 py-4 bg-background/50 border-t border-border flex justify-between items-center">
+                 <span className="text-[10px] font-mono text-text-secondary/70 truncate pr-4">ID: {key.id}</span>
+                 <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={10} className="text-primary-brand" />
+                    <span className="text-[9px] font-black uppercase text-text-primary tracking-tighter">Production</span>
+                 </div>
               </div>
             </div>
           ))}
@@ -362,14 +366,15 @@ export function AppApiKeys() {
                 </div>
 
                 <div className="p-4 bg-surface border border-border rounded-lg space-y-3">
-                   <p className="text-[10px] uppercase font-black text-text-secondary tracking-tighter opacity-50">Audit Context</p>
-                   <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-text-secondary">Created By</span>
-                      <span className="text-text-primary font-bold">Organization Owner</span>
-                   </div>
-                   <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-text-secondary">Last Rotation</span>
-                      <span className="text-text-primary font-bold">Never rotated</span>
+                   <p className="text-[10px] uppercase font-black text-text-secondary tracking-tighter opacity-50">Security Notice</p>
+                   <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[11px]">
+                         <span className="text-text-secondary">Key Visibility</span>
+                         <span className="text-text-primary font-bold">Encrypted & Hashed</span>
+                      </div>
+                      <p className="text-[9px] text-text-secondary leading-relaxed bg-background/50 p-2 rounded border border-border/50">
+                        {viewingKey.note || "For maximum security, secret keys are hashed and cannot be fully retrieved after generation. Create a new keypair if you lost your original secret."}
+                      </p>
                    </div>
                 </div>
               </div>

@@ -2,72 +2,63 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldCheck, 
+  Key, 
   Plus, 
   Search, 
   Loader2, 
-  MoreVertical, 
   Trash2, 
-  ChevronDown, 
-  ChevronUp,
   AlertCircle,
   X,
   Edit2,
-  Check
+  Lock
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDashboard } from '@/context/DashboardContext';
 import { cn } from '@/lib/utils';
 import { ConfirmModal } from './ConfirmModal';
 
-interface AppRole {
+interface AppPermission {
   id: string;
+  key: string;
   name: string;
   description?: string;
-  permissions?: {
-    permission: {
-      id: string;
-      key: string;
-      name: string;
-    };
-  }[];
   createdAt: string;
-  updatedAt: string;
 }
 
-export function AppRoles() {
+export function AppPermissions() {
   const { currentOrg, currentApp } = useDashboard();
-  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [permissions, setPermissions] = useState<AppPermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Form State
-  const [editingRole, setEditingRole] = useState<AppRole | null>(null);
-  const [roleName, setRoleName] = useState("");
-  const [roleDescription, setRoleDescription] = useState("");
+  const [editingPermission, setEditingPermission] = useState<AppPermission | null>(null);
+  const [permissionKey, setPermissionKey] = useState("");
+  const [permissionName, setPermissionName] = useState("");
+  const [permissionDescription, setPermissionDescription] = useState("");
   
   // Custom delete confirmation
-  const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
-  const [isDeletingRole, setIsDeletingRole] = useState(false);
+  const [permissionToDelete, setPermissionToDelete] = useState<string | null>(null);
+  const [isDeletingPermission, setIsDeletingPermission] = useState(false);
 
-  const fetchRoles = async () => {
+  const fetchPermissions = async () => {
     if (!currentOrg || !currentApp) return;
     try {
       setIsLoading(true);
-      const data = await api.get(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles`);
-      setRoles(data);
+      const data = await api.get(`/organizations/${currentOrg.id}/applications/${currentApp.id}/permissions`);
+      setPermissions(data);
     } catch (err) {
-      console.error("Failed to fetch application roles", err);
+      console.error("Failed to fetch application permissions", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRoles();
+    fetchPermissions();
   }, [currentOrg, currentApp]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,67 +69,69 @@ export function AppRoles() {
     setIsSaving(true);
     
     try {
-      if (editingRole) {
-        await api.patch(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles/${editingRole.id}`, {
-          name: roleName,
-          description: roleDescription
-        });
+      const payload = {
+        key: permissionKey,
+        name: permissionName,
+        description: permissionDescription
+      };
+
+      if (editingPermission) {
+        await api.patch(`/organizations/${currentOrg.id}/applications/${currentApp.id}/permissions/${editingPermission.id}`, payload);
       } else {
-        await api.post(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles`, {
-          name: roleName,
-          description: roleDescription
-        });
+        await api.post(`/organizations/${currentOrg.id}/applications/${currentApp.id}/permissions`, payload);
       }
       
-      await fetchRoles();
+      await fetchPermissions();
       handleCloseModal();
     } catch (err: any) {
-      setError(err.message || "Failed to save role");
+      setError(err.message || "Failed to save permission");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleEdit = (role: AppRole) => {
-    setEditingRole(role);
-    setRoleName(role.name);
-    setRoleDescription(role.description || "");
-    setIsInviteModalOpen(true);
+  const handleEdit = (permission: AppPermission) => {
+    setEditingPermission(permission);
+    setPermissionKey(permission.key);
+    setPermissionName(permission.name);
+    setPermissionDescription(permission.description || "");
+    setIsModalOpen(true);
   };
 
   const handleDelete = async () => {
-    if (!currentOrg || !currentApp || !roleToDelete) return;
+    if (!currentOrg || !currentApp || !permissionToDelete) return;
     
     try {
-      setIsDeletingRole(true);
-      await api.delete(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles/${roleToDelete}`);
-      setRoles(roles.filter(r => r.id !== roleToDelete));
-      setRoleToDelete(null);
+      setIsDeletingPermission(true);
+      await api.delete(`/organizations/${currentOrg.id}/applications/${currentApp.id}/permissions/${permissionToDelete}`);
+      setPermissions(permissions.filter(p => p.id !== permissionToDelete));
+      setPermissionToDelete(null);
     } catch (err) {
-      console.error("Failed to delete role", err);
-      alert("Failed to delete role.");
+      console.error("Failed to delete permission", err);
     } finally {
-      setIsDeletingRole(false);
+      setIsDeletingPermission(false);
     }
   };
 
   const handleCloseModal = () => {
-    setIsInviteModalOpen(false);
-    setEditingRole(null);
-    setRoleName("");
-    setRoleDescription("");
+    setIsModalOpen(false);
+    setEditingPermission(null);
+    setPermissionKey("");
+    setPermissionName("");
+    setPermissionDescription("");
     setError(null);
   };
 
-  const filteredRoles = roles.filter(role => 
-    role.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPermissions = permissions.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.key.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="animate-spin text-primary-brand w-10 h-10" />
-        <p className="text-xs text-text-secondary font-mono animate-pulse">Loading application roles...</p>
+        <p className="text-xs text-text-secondary font-mono animate-pulse">Loading application permissions...</p>
       </div>
     );
   }
@@ -148,10 +141,10 @@ export function AppRoles() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-            <ShieldCheck className="text-primary-brand" size={24} />
-            Application Roles
+            <Lock className="text-primary-brand" size={24} />
+            Application Permissions
           </h2>
-          <p className="text-text-secondary text-sm">Define and manage custom roles for {currentApp?.name}.</p>
+          <p className="text-text-secondary text-sm">Manage the specific permission keys available for {currentApp?.name}.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -159,18 +152,18 @@ export function AppRoles() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
             <input 
               type="text" 
-              placeholder="Search roles..."
+              placeholder="Search permissions..."
               className="w-full bg-surface border border-border rounded-md pl-10 pr-4 py-2 text-xs text-text-primary focus:border-text-primary transition-all outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button 
-            onClick={() => setIsInviteModalOpen(true)}
+            onClick={() => setIsModalOpen(true)}
             className="btn-primary py-2 px-4 rounded-md text-xs flex items-center justify-center gap-2 font-bold shrink-0"
           >
             <Plus size={14} />
-            Create Role
+            Add Permission
           </button>
         </div>
       </div>
@@ -180,52 +173,47 @@ export function AppRoles() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface text-[10px] uppercase tracking-widest font-bold text-text-secondary border-b border-border">
-                <th className="px-6 py-4">Role Name</th>
-                <th className="px-6 py-4">Permissions</th>
+                <th className="px-6 py-4">Name / Key</th>
+                <th className="px-6 py-4">Description</th>
                 <th className="px-6 py-4">Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-sm">
-              {filteredRoles.length === 0 ? (
+              {filteredPermissions.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-50">
-                      <ShieldCheck size={40} className="text-text-secondary mb-2" />
-                      <p className="text-sm font-medium">No custom roles found.</p>
-                      <p className="text-xs">Create roles to categorize your application users.</p>
+                      <Lock size={40} className="text-text-secondary mb-2" />
+                      <p className="text-sm font-medium">No custom permissions found.</p>
+                      <p className="text-xs">Add permissions that your app will check for.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                filteredRoles.map((role) => (
-                  <tr key={role.id} className="hover:bg-surface-hover/30 transition-colors group">
+                filteredPermissions.map((permission) => (
+                  <tr key={permission.id} className="hover:bg-surface-hover/30 transition-colors group">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-text-primary uppercase tracking-tighter text-xs">{role.name}</div>
-                      <div className="text-[9px] text-text-secondary font-mono mt-0.5 truncate max-w-[150px]">{role.description || "No description"}</div>
+                      <div className="font-bold text-text-primary text-xs">{permission.name}</div>
+                      <div className="text-[10px] text-primary-brand font-mono mt-0.5">{permission.key}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-text-secondary text-[10px] font-bold uppercase tracking-wider">
-                        <ShieldCheck size={12} className="text-primary-brand/60" />
-                        {role.permissions?.length || 0} Permissions
-                      </div>
+                    <td className="px-6 py-4 text-text-secondary text-xs max-w-xs truncate">
+                      {permission.description || "No description"}
                     </td>
                     <td className="px-6 py-4 text-text-secondary text-[10px] font-medium">
-                      {new Date(role.createdAt).toLocaleDateString()}
+                      {new Date(permission.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
-                          onClick={() => handleEdit(role)}
+                          onClick={() => handleEdit(permission)}
                           className="p-1.5 hover:bg-surface-hover rounded transition-colors text-text-secondary hover:text-text-primary"
-                          title="Edit Role"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button 
-                          onClick={() => setRoleToDelete(role.id)}
+                          onClick={() => setPermissionToDelete(permission.id)}
                           className="p-1.5 hover:bg-surface-hover rounded transition-colors text-text-secondary hover:text-error"
-                          title="Delete Role"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -239,17 +227,16 @@ export function AppRoles() {
         </div>
       </div>
 
-      {/* Create/Edit Role Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-[#141414] border border-border rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary-brand/10 border border-primary-brand/20 flex items-center justify-center text-primary-brand">
-                  {editingRole ? <Edit2 size={20} /> : <Plus size={20} />}
+                  <Lock size={20} />
                 </div>
                 <h3 className="text-xl font-bold text-text-primary tracking-tight">
-                  {editingRole ? 'Edit Role' : 'Create Application Role'}
+                  {editingPermission ? 'Edit Permission' : 'Add Permission'}
                 </h3>
               </div>
               <button 
@@ -270,25 +257,37 @@ export function AppRoles() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-bold text-text-secondary mb-2">Role Name</label>
+                  <label className="block text-[11px] uppercase tracking-widest font-bold text-text-secondary mb-2">Display Name</label>
                   <input 
                     type="text" 
                     required
-                    placeholder="e.g. PREMIUM_USER, BETA_TESTER"
+                    placeholder="e.g. Create Reports"
                     className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-primary focus:border-text-primary transition-all outline-none"
-                    value={roleName}
-                    onChange={(e) => setRoleName(e.target.value)}
+                    value={permissionName}
+                    onChange={(e) => setPermissionName(e.target.value)}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-bold text-text-secondary mb-2">Description (Optional)</label>
+                  <label className="block text-[11px] uppercase tracking-widest font-bold text-text-secondary mb-2">Permission Key</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. reports.create"
+                    className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm font-mono text-text-primary focus:border-text-primary transition-all outline-none"
+                    value={permissionKey}
+                    onChange={(e) => setPermissionKey(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] uppercase tracking-widest font-bold text-text-secondary mb-2">Description</label>
                   <textarea 
                     rows={3}
-                    placeholder="What does this role represent?"
+                    placeholder="What does this allow?"
                     className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-primary focus:border-text-primary transition-all outline-none resize-none"
-                    value={roleDescription}
-                    onChange={(e) => setRoleDescription(e.target.value)}
+                    value={permissionDescription}
+                    onChange={(e) => setPermissionDescription(e.target.value)}
                   />
                 </div>
               </div>
@@ -303,10 +302,10 @@ export function AppRoles() {
                 </button>
                 <button 
                   type="submit"
-                  disabled={isSaving || !roleName}
+                  disabled={isSaving || !permissionKey || !permissionName}
                   className="flex-1 px-4 py-3 rounded-md bg-primary-brand text-background text-sm font-bold hover:bg-primary-brand/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingRole ? 'Update Role' : 'Create Role')}
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : 'Save Permission'}
                 </button>
               </div>
             </form>
@@ -315,13 +314,13 @@ export function AppRoles() {
       )}
 
       <ConfirmModal 
-        isOpen={!!roleToDelete}
-        onClose={() => setRoleToDelete(null)}
+        isOpen={!!permissionToDelete}
+        onClose={() => setPermissionToDelete(null)}
         onConfirm={handleDelete}
-        isLoading={isDeletingRole}
-        title="Delete Application Role?"
-        description="Are you sure you want to delete this role? This action is permanent and may affect users currently assigned to this role."
-        confirmText="Yes, Delete Role"
+        isLoading={isDeletingPermission}
+        title="Delete Permission?"
+        description="Are you sure you want to delete this permission? It will be removed from all roles it is currently assigned to."
+        confirmText="Yes, Delete"
       />
     </div>
   );

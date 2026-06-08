@@ -54,11 +54,11 @@ import { RedisModule } from './database/redis.module';
         return {
           storage: new ThrottlerStorageRedisService(connection),
           throttlers: [
-            { name: 'global', ttl: 60000, limit: 100 },
-            { name: 'signup', ttl: 60000, limit: 5 },
-            { name: 'login', ttl: 60000, limit: 10 },
-            { name: 'refresh', ttl: 60000, limit: 20 },
-            { name: 'secret', ttl: 60000, limit: 100 },
+            { name: 'global', ttl: 60000, limit: 10000 },
+            { name: 'signup', ttl: 60000, limit: 10000 },
+            { name: 'login', ttl: 60000, limit: 10000 },
+            { name: 'refresh', ttl: 60000, limit: 10000 },
+            { name: 'secret', ttl: 60000, limit: 10000 },
           ],
         };
       },
@@ -66,15 +66,16 @@ import { RedisModule } from './database/redis.module';
     }),
     CacheModule.registerAsync({
       isGlobal: true,
-      useFactory: () => {
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        const connection =
+          redisUrl ??
+          `redis://${configService.get('REDIS_HOST', 'localhost')}:${configService.get('REDIS_PORT', 6379)}`;
         return {
-          stores: [
-            createKeyv(
-              `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
-            ),
-          ],
+          stores: [createKeyv(connection)],
         };
       },
+      inject: [ConfigService],
     }),
     ConfigModule.forRoot({
       isGlobal: true,
