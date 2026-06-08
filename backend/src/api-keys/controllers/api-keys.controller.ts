@@ -50,7 +50,7 @@ export class ApiKeysController {
 
   @ApiOperation({ summary: 'List API Keys' })
   @Get()
-  @RequirePermissions('apikey.handle')
+  @RequirePermissions('apikey.view')
   findAll(@Param('orgId') orgId: string, @Param('appId') appId: string) {
     return this.apiKeysService.findAll(orgId, appId);
   }

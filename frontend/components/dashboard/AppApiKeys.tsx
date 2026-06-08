@@ -35,6 +35,7 @@ interface ApiKey {
   expiresAt?: string;
   publishableKey?: string; 
   secretKey?: string;      
+  note?: string;
 }
 
 export function AppApiKeys() {
@@ -372,7 +373,6 @@ export function AppApiKeys() {
                          <span className="text-text-primary font-bold">Encrypted & Hashed</span>
                       </div>
                       <p className="text-[9px] text-text-secondary leading-relaxed bg-background/50 p-2 rounded border border-border/50">
-                        {/* @ts-ignore */}
                         {viewingKey.note || "For maximum security, secret keys are hashed and cannot be fully retrieved after generation. Create a new keypair if you lost your original secret."}
                       </p>
                    </div>

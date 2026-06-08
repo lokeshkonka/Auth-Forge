@@ -54,7 +54,9 @@ export class PermissionGuard implements CanActivate {
       'organization.view',
       'role.view',
       'permission.read',
-      'member.view'
+      'member.view',
+      'apikey.view',
+      'audit.view'
     ];
 
     const organizationId =

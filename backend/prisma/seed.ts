@@ -5,27 +5,33 @@ const prisma = new PrismaClient();
 const PERMISSION_CATALOG = [
   // Organization Management
   { key: 'organization.handle', name: 'Handle Organization', category: 'Organization', description: 'Update organization details or delete organization', sortOrder: 1 },
+  { key: 'organization.view', name: 'View Organization', category: 'Organization', description: 'View organization details', sortOrder: 2 },
   
   // Member Management
   { key: 'member.handle', name: 'Handle Members', category: 'Members', description: 'Invite, remove, or suspend organization members', sortOrder: 10 },
+  { key: 'member.view', name: 'View Members', category: 'Members', description: 'View organization members', sortOrder: 11 },
   
   // Role & Permission Management
   { key: 'role.handle', name: 'Handle Roles', category: 'Roles', description: 'Create, update, and delete organization roles', sortOrder: 20 },
+  { key: 'role.view', name: 'View Roles', category: 'Roles', description: 'View organization roles', sortOrder: 21 },
   { key: 'permission.handle', name: 'Handle Permissions', category: 'Permissions', description: 'Manage system-wide permissions', sortOrder: 25 },
+  { key: 'permission.read', name: 'View Permissions', category: 'Permissions', description: 'View system-wide permissions', sortOrder: 26 },
 
   // Application Management
   { key: 'application.handle', name: 'Handle Applications', category: 'Applications', description: 'Create, update, and delete applications', sortOrder: 30 },
+  { key: 'application.view', name: 'View Applications', category: 'Applications', description: 'View organization applications', sortOrder: 31 },
   { key: 'app_role.handle', name: 'Handle App Roles', category: 'Application Roles', description: 'Manage roles and assignments within applications', sortOrder: 35 },
   { key: 'app_permission.handle', name: 'Handle App Permissions', category: 'Application Permissions', description: 'Manage permissions within applications', sortOrder: 36 },
 
   // API Key Management
   { key: 'apikey.handle', name: 'Handle API Keys', category: 'API Keys', description: 'Create and revoke API keys', sortOrder: 40 },
+  { key: 'apikey.view', name: 'View API Keys', category: 'API Keys', description: 'View application API keys', sortOrder: 41 },
 
   // Audit Logs
   { key: 'audit.view', name: 'View Audit Logs', category: 'Audit Logs', description: 'View organization and application audit logs', sortOrder: 50 },
   
-  // End User Management (Legacy/Internal)
-  { key: 'end_user.handle', name: 'Handle End Users', category: 'End Users', description: 'Manage application end users', sortOrder: 60 },
+  // Session Management
+  { key: 'session.handle', name: 'Handle Sessions', category: 'Sessions', description: 'Manage member sessions', sortOrder: 80 },
 ];
 
 async function main() {
@@ -44,29 +50,7 @@ async function main() {
     });
   }
 
-  // Ensure read/view permissions also exist for granular control
-  const viewPermissions = [
-    { key: 'organization.view', name: 'View Organization', category: 'Organization', sortOrder: 2 },
-    { key: 'member.view', name: 'View Members', category: 'Members', sortOrder: 11 },
-    { key: 'role.view', name: 'View Roles', category: 'Roles', sortOrder: 21 },
-    { key: 'permission.read', name: 'View Permissions', category: 'Permissions', sortOrder: 26 },
-    { key: 'application.view', name: 'View Applications', category: 'Applications', sortOrder: 31 },
-    { key: 'session.handle', name: 'Handle Sessions', category: 'Sessions', sortOrder: 80 },
-  ];
-
-  for (const perm of viewPermissions) {
-    await prisma.permission.upsert({
-      where: { key: perm.key },
-      update: {
-        name: perm.name,
-        category: perm.category,
-        sortOrder: perm.sortOrder,
-      },
-      create: { ...perm, description: `Grants ability to ${perm.name.toLowerCase()}` },
-    });
-  }
-
-  console.log(`Upserted ${PERMISSION_CATALOG.length + viewPermissions.length} permissions.`);
+  console.log(`Upserted ${PERMISSION_CATALOG.length} permissions.`);
 
   console.log('Ensuring all organizations have correct owner memberships and full access roles...');
   const organizations = await prisma.organization.findMany({

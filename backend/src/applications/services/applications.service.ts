@@ -72,7 +72,7 @@ export class ApplicationsService {
     ]);
 
     // Generate last 7 days for trends
-    const trends = [];
+    const trends: { date: string; count: number }[] = [];
     const now = new Date();
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now);

@@ -11,8 +11,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Settings,
-  UserPlus,
   LayoutGrid
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -26,7 +24,7 @@ interface Stats {
 }
 
 export function AppDashboard() {
-  const { currentOrg, currentApp } = useDashboard();
+  const { currentOrg, currentApp, setActiveSubView } = useDashboard();
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,11 +73,11 @@ export function AppDashboard() {
   const maxCount = Math.max(...stats.trends.map(t => t.count), 1);
 
   const checklistItems = [
-    { name: 'handle permissions', status: 'ready', icon: Key },
-    { name: 'handle roles', status: 'ready', icon: ShieldCheck },
-    { name: 'view audit', status: 'ready', icon: Activity },
-    { name: 'handle members', status: 'ready', icon: Users },
-    { name: 'handle applications', status: 'ready', icon: LayoutGrid },
+    { name: 'handle permissions', status: 'ready', icon: Key, view: 'permissions' },
+    { name: 'handle roles', status: 'ready', icon: ShieldCheck, view: 'roles' },
+    { name: 'view audit', status: 'ready', icon: Activity, view: 'audit-logs' },
+    { name: 'handle members', status: 'ready', icon: Users, view: 'members' },
+    { name: 'handle applications', status: 'ready', icon: LayoutGrid, view: 'overview' },
   ];
 
   return (
@@ -190,7 +188,11 @@ export function AppDashboard() {
           
           <div className="space-y-3">
             {checklistItems.map((item) => (
-              <div key={item.name} className="flex items-center justify-between p-4 rounded-xl bg-background border border-border group hover:border-primary-brand/30 transition-all cursor-default">
+              <div 
+                key={item.name} 
+                onClick={() => item.view === 'members' ? (window.location.href = `/dashboard/members`) : setActiveSubView(item.view)}
+                className="flex items-center justify-between p-4 rounded-xl bg-background border border-border group hover:border-primary-brand/30 transition-all cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-text-secondary group-hover:text-primary-brand transition-colors border border-border">
                     <item.icon size={18} />
@@ -215,6 +217,7 @@ export function AppDashboard() {
           </div>
         </div>
       </div>
+
 
       {/* Developer Context */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

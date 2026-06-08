@@ -6,7 +6,7 @@ import { useDashboard } from '@/context/DashboardContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, LayoutGrid } from 'lucide-react';
+import { Loader2, Plus, LayoutGrid, ArrowUpRight } from 'lucide-react';
 import { AppDashboard } from '@/components/dashboard/AppDashboard';
 import { AppUsers } from '@/components/dashboard/AppUsers';
 import { AppRoles } from '@/components/dashboard/AppRoles';
