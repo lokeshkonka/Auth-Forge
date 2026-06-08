@@ -17,6 +17,15 @@ export class CreateAppRoleDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['uuid-1', 'uuid-2'],
+    description: 'Array of application permission IDs',
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  permissionIds?: string[];
 }
 
 export class UpdateAppRoleDto {
@@ -29,4 +38,13 @@ export class UpdateAppRoleDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['uuid-1', 'uuid-2'],
+    description: 'Array of application permission IDs',
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  permissionIds?: string[];
 }

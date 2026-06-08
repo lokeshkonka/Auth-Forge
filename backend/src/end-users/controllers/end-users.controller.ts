@@ -129,16 +129,16 @@ export class EndUsersController {
   @ApiOperation({ summary: 'End-User Signup' })
   @ApiSecurity('PublishableKey')
   @UseGuards(ApiKeyAuthGuard)
-  @Throttle({ signup: { limit: 5, ttl: 60000 } })
+  @Throttle({ signup: { limit: 10000, ttl: 60000 } })
   @Post('auth/signup')
   signup(
     @Param('applicationSlug') applicationSlug: string,
     @Req() req: RequestWithAuth,
     @Body() dto: EndUserSignupDto,
   ) {
-    this.validateSlug(req, applicationSlug);
     return this.endUsersService.signup(req.applicationId, dto);
   }
+
 
   @ApiOperation({ summary: 'End-User Login' })
   @ApiSecurity('PublishableKey')
@@ -165,7 +165,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Refresh End-User Token' })
   @ApiSecurity('PublishableKey')
   @UseGuards(ApiKeyAuthGuard)
-  @Throttle({ refresh: { limit: 20, ttl: 60000 } })
+  @Throttle({ refresh: { limit: 10000, ttl: 60000 } })
   @Post('auth/refresh')
   refresh(
     @Param('applicationSlug') applicationSlug: string,

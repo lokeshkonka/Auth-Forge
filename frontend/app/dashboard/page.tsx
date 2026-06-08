@@ -79,6 +79,8 @@ export default function DashboardPage() {
         return <AppUsers />;
       case 'roles':
         return <AppRoles />;
+      case 'permissions':
+        return <AppPermissions />;
       case 'audit-logs':
         return <AppAuditLogs />;
       case 'api-keys':
@@ -161,5 +163,8 @@ export default function DashboardPage() {
         </div>
       )}
     </>
+  );
+}
+</>
   );
 }

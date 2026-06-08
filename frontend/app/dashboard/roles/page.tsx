@@ -65,6 +65,7 @@ export default function RolesPage() {
   const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchRoles = async () => {
     if (!currentOrg) return;
@@ -79,7 +80,9 @@ export default function RolesPage() {
   const fetchPermissions = async () => {
     try {
       const permsResponse = await api.get('/permissions');
-      setAllPermissions(permsResponse.data.categories);
+      // The backend returns { success: true, data: { categories: ... } }
+      const categories = permsResponse.data?.categories || permsResponse.categories || {};
+      setAllPermissions(categories);
     } catch (err) {
       console.error("Failed to fetch permissions", err);
     }

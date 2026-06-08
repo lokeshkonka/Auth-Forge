@@ -63,7 +63,8 @@ export class PermissionGuard implements CanActivate {
       return false; // Not a member of the organization
     }
 
-    if (membership.isOwner) {
+    // Owner check: Either flag on membership or matching ownerId on organization
+    if (membership.isOwner || membership.organization?.ownerId === user.sub) {
       return true;
     }
 

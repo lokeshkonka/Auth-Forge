@@ -12,7 +12,8 @@ import {
   ChevronUp,
   AlertCircle,
   X,
-  Edit2
+  Edit2,
+  Check
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDashboard } from '@/context/DashboardContext';
@@ -173,7 +174,7 @@ export function AppRoles() {
             <thead>
               <tr className="bg-surface text-[10px] uppercase tracking-widest font-bold text-text-secondary border-b border-border">
                 <th className="px-6 py-4">Role Name</th>
-                <th className="px-6 py-4">Description</th>
+                <th className="px-6 py-4">Permissions</th>
                 <th className="px-6 py-4">Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -194,10 +195,13 @@ export function AppRoles() {
                   <tr key={role.id} className="hover:bg-surface-hover/30 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="font-bold text-text-primary uppercase tracking-tighter text-xs">{role.name}</div>
-                      <div className="text-[9px] text-text-secondary font-mono mt-0.5">{role.id}</div>
+                      <div className="text-[9px] text-text-secondary font-mono mt-0.5 truncate max-w-[150px]">{role.description || "No description"}</div>
                     </td>
-                    <td className="px-6 py-4 text-text-secondary text-xs max-w-xs truncate">
-                      {role.description || <span className="italic opacity-50 text-[10px]">No description provided</span>}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-text-secondary text-[10px] font-bold uppercase tracking-wider">
+                        <ShieldCheck size={12} className="text-primary-brand/60" />
+                        {role.permissions?.length || 0} Permissions
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-text-secondary text-[10px] font-medium">
                       {new Date(role.createdAt).toLocaleDateString()}
@@ -288,6 +292,84 @@ export function AppRoles() {
                   onClick={handleCloseModal}
                   className="flex-1 px-4 py-3 rounded-md bg-surface-hover text-text-primary text-sm font-bold border border-border"
                 >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSaving || !roleName}
+                  className="flex-1 px-4 py-3 rounded-md bg-primary-brand text-background text-sm font-bold hover:bg-primary-brand/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingRole ? 'Update Role' : 'Create Role')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal 
+        isOpen={!!roleToDelete}
+        onClose={() => setRoleToDelete(null)}
+        onConfirm={handleDelete}
+        isLoading={isDeletingRole}
+        title="Delete Application Role?"
+        description="Are you sure you want to delete this role? This action is permanent and may affect users currently assigned to this role."
+        confirmText="Yes, Delete Role"
+      />
+    </div>
+  );
+}
+          >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSaving || !roleName}
+                  className="flex-1 px-4 py-3 rounded-md bg-primary-brand text-background text-sm font-bold hover:bg-primary-brand/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingRole ? 'Update Role' : 'Create Role')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal 
+        isOpen={!!roleToDelete}
+        onClose={() => setRoleToDelete(null)}
+        onConfirm={handleDelete}
+        isLoading={isDeletingRole}
+        title="Delete Application Role?"
+        description="Are you sure you want to delete this role? This action is permanent and may affect users currently assigned to this role."
+        confirmText="Yes, Delete Role"
+      />
+    </div>
+  );
+}
+city-50"
+                >
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : (editingRole ? 'Update Role' : 'Create Role')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal 
+        isOpen={!!roleToDelete}
+        onClose={() => setRoleToDelete(null)}
+        onConfirm={handleDelete}
+        isLoading={isDeletingRole}
+        title="Delete Application Role?"
+        description="Are you sure you want to delete this role? This action is permanent and may affect users currently assigned to this role."
+        confirmText="Yes, Delete Role"
+      />
+    </div>
+  );
+}
+          >
                   Cancel
                 </button>
                 <button 

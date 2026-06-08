@@ -78,6 +78,21 @@ async function main() {
   }
 
   console.log(`Seeded ${PERMISSION_CATALOG.length} permissions.`);
+
+  console.log('Fixing organization owner memberships...');
+  const organizations = await prisma.organization.findMany();
+  for (const org of organizations) {
+    await prisma.membership.updateMany({
+      where: {
+        organizationId: org.id,
+        memberId: org.ownerId,
+      },
+      data: {
+        isOwner: true,
+      },
+    });
+  }
+  console.log('Fixed owner memberships.');
 }
 
 main()
