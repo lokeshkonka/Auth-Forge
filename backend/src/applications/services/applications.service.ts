@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../../audit/services/audit.service';
 import { CreateApplicationDto } from '../dto/create-application.dto';
@@ -11,7 +15,11 @@ export class ApplicationsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async create(organizationId: string, dto: CreateApplicationDto, actorId?: string) {
+  async create(
+    organizationId: string,
+    dto: CreateApplicationDto,
+    actorId?: string,
+  ) {
     const { name, slug, description } = dto;
     const existing = await this.prisma.application.findUnique({
       where: {
@@ -23,7 +31,9 @@ export class ApplicationsService {
     });
 
     if (existing) {
-      throw new ConflictException(`Application with slug ${slug} already exists in this organization`);
+      throw new ConflictException(
+        `Application with slug ${slug} already exists in this organization`,
+      );
     }
 
     const application = await this.prisma.application.create({
@@ -65,7 +75,12 @@ export class ApplicationsService {
     return application;
   }
 
-  async update(organizationId: string, id: string, dto: UpdateApplicationDto, actorId?: string) {
+  async update(
+    organizationId: string,
+    id: string,
+    dto: UpdateApplicationDto,
+    actorId?: string,
+  ) {
     const application = await this.findOne(organizationId, id);
 
     const updated = await this.prisma.application.update({
@@ -79,7 +94,10 @@ export class ApplicationsService {
       action: 'application.updated',
       resourceType: 'Application',
       resourceId: id,
-      oldValue: { name: application.name, description: application.description },
+      oldValue: {
+        name: application.name,
+        description: application.description,
+      },
       newValue: dto,
     });
 

@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ApplicationsService } from '../services/applications.service';
 import { CreateApplicationDto } from '../dto/create-application.dto';
 import { UpdateApplicationDto } from '../dto/update-application.dto';
@@ -30,7 +45,11 @@ export class ApplicationsController {
     @Body() createApplicationDto: CreateApplicationDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.applicationsService.create(orgId, createApplicationDto, req.user.sub);
+    return this.applicationsService.create(
+      orgId,
+      createApplicationDto,
+      req.user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'List Applications' })
@@ -58,7 +77,12 @@ export class ApplicationsController {
     @Body() updateApplicationDto: UpdateApplicationDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.applicationsService.update(orgId, appId, updateApplicationDto, req.user.sub);
+    return this.applicationsService.update(
+      orgId,
+      appId,
+      updateApplicationDto,
+      req.user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Delete Application' })
@@ -70,7 +94,11 @@ export class ApplicationsController {
     @Param('appId') appId: string,
     @Req() req: RequestWithAuth,
   ) {
-    const application = await this.applicationsService.remove(orgId, appId, req.user.sub);
+    const application = await this.applicationsService.remove(
+      orgId,
+      appId,
+      req.user.sub,
+    );
     return {
       success: true,
       application,

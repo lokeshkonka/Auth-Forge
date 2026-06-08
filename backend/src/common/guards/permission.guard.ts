@@ -29,19 +29,23 @@ export class PermissionGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest<PermissionRequest>();
     const user = request.user;
-    
+
     // Attempt to resolve organizationId from request (params or body)
-    const organizationId = request.params.organizationId || request.params.orgId || request.body?.organizationId || request.params.id;
+    const organizationId =
+      request.params.organizationId ||
+      request.params.orgId ||
+      request.body?.organizationId ||
+      request.params.id;
 
     if (!user || !user.member) {
       return false; // Not authenticated or member not loaded
@@ -52,7 +56,9 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Check if user is the owner of the organization
-    const membership = user.member.memberships.find((m) => m.organizationId === organizationId);
+    const membership = user.member.memberships.find(
+      (m) => m.organizationId === organizationId,
+    );
     if (!membership) {
       return false; // Not a member of the organization
     }
@@ -69,6 +75,8 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Must have all required permissions
-    return requiredPermissions.every((permission) => userPermissions.has(permission));
+    return requiredPermissions.every((permission) =>
+      userPermissions.has(permission),
+    );
   }
 }

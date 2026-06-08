@@ -25,9 +25,13 @@ export class OrganizationsService {
     return this.membersService.findMembershipsByMemberId(memberId);
   }
 
-  async update(organizationId: string, dto: { name?: string }, actorId?: string) {
+  async update(
+    organizationId: string,
+    dto: { name?: string },
+    actorId?: string,
+  ) {
     const organization = await this.prisma.organization.findUnique({
-      where: { id: organizationId }
+      where: { id: organizationId },
     });
 
     if (!organization) {
@@ -36,7 +40,7 @@ export class OrganizationsService {
 
     const updated = await this.prisma.organization.update({
       where: { id: organizationId },
-      data: dto
+      data: dto,
     });
 
     await this.auditService.createLog({
@@ -54,7 +58,7 @@ export class OrganizationsService {
 
   async remove(organizationId: string, actorId?: string) {
     const organization = await this.prisma.organization.findUnique({
-      where: { id: organizationId }
+      where: { id: organizationId },
     });
 
     if (!organization) {
@@ -62,7 +66,7 @@ export class OrganizationsService {
     }
 
     const deleted = await this.prisma.organization.delete({
-      where: { id: organizationId }
+      where: { id: organizationId },
     });
 
     await this.auditService.createLog({
@@ -108,7 +112,9 @@ export class OrganizationsService {
     });
 
     if (!role) {
-      throw new BadRequestException('The selected role does not belong to this organization');
+      throw new BadRequestException(
+        'The selected role does not belong to this organization',
+      );
     }
 
     // 2. Check if the user is already a member
@@ -120,7 +126,9 @@ export class OrganizationsService {
     });
 
     if (existingMember) {
-      throw new ConflictException('This user is already a member of the organization');
+      throw new ConflictException(
+        'This user is already a member of the organization',
+      );
     }
 
     // 3. Check for existing pending invitation
@@ -134,7 +142,9 @@ export class OrganizationsService {
     });
 
     if (existingInvitation) {
-      throw new ConflictException('A pending invitation already exists for this email');
+      throw new ConflictException(
+        'A pending invitation already exists for this email',
+      );
     }
 
     const invitation = await this.prisma.invitation.create({
@@ -176,21 +186,21 @@ export class OrganizationsService {
             email: true,
             firstName: true,
             lastName: true,
-          }
+          },
         },
         roles: {
           include: {
-            role: true
-          }
-        }
-      }
+            role: true,
+          },
+        },
+      },
     });
 
     return {
       success: true,
       statusCode: 200,
       message: 'Members fetched successfully',
-      data: memberships.map(m => ({
+      data: memberships.map((m) => ({
         id: m.id,
         memberId: m.memberId,
         email: m.member.email,
@@ -199,12 +209,12 @@ export class OrganizationsService {
         status: m.status,
         isOwner: m.isOwner,
         createdAt: m.createdAt,
-        roles: m.roles.map(r => ({
+        roles: m.roles.map((r) => ({
           id: r.role.id,
           name: r.role.name,
-          isSystemRole: r.role.isSystemRole
-        }))
-      }))
+          isSystemRole: r.role.isSystemRole,
+        })),
+      })),
     };
   }
 
@@ -218,14 +228,14 @@ export class OrganizationsService {
             email: true,
             firstName: true,
             lastName: true,
-          }
+          },
         },
         roles: {
           include: {
-            role: true
-          }
-        }
-      }
+            role: true,
+          },
+        },
+      },
     });
 
     if (!membership) {
@@ -242,7 +252,7 @@ export class OrganizationsService {
     actorId?: string,
   ) {
     const membership = await this.prisma.membership.findFirst({
-      where: { id: membershipId, organizationId }
+      where: { id: membershipId, organizationId },
     });
 
     if (!membership) {
@@ -251,13 +261,16 @@ export class OrganizationsService {
 
     const updated = await this.prisma.membership.update({
       where: { id: membershipId },
-      data: { status: dto.status }
+      data: { status: dto.status },
     });
 
     await this.auditService.createLog({
       organizationId,
       actorId,
-      action: dto.status === 'SUSPENDED' ? 'member.suspended' : 'member.status_updated',
+      action:
+        dto.status === 'SUSPENDED'
+          ? 'member.suspended'
+          : 'member.status_updated',
       resourceType: 'Membership',
       resourceId: membershipId,
       oldValue: { status: membership.status },
@@ -267,9 +280,13 @@ export class OrganizationsService {
     return updated;
   }
 
-  async removeMember(organizationId: string, membershipId: string, actorId?: string) {
+  async removeMember(
+    organizationId: string,
+    membershipId: string,
+    actorId?: string,
+  ) {
     const membership = await this.prisma.membership.findFirst({
-      where: { id: membershipId, organizationId }
+      where: { id: membershipId, organizationId },
     });
 
     if (!membership) {
@@ -281,7 +298,7 @@ export class OrganizationsService {
     }
 
     const deleted = await this.prisma.membership.delete({
-      where: { id: membershipId }
+      where: { id: membershipId },
     });
 
     // Generate Audit Log
@@ -297,9 +314,14 @@ export class OrganizationsService {
     return deleted;
   }
 
-  async assignRole(organizationId: string, membershipId: string, roleId: string, actorId?: string) {
+  async assignRole(
+    organizationId: string,
+    membershipId: string,
+    roleId: string,
+    actorId?: string,
+  ) {
     const membership = await this.prisma.membership.findFirst({
-      where: { id: membershipId, organizationId }
+      where: { id: membershipId, organizationId },
     });
 
     if (!membership) {
@@ -307,7 +329,7 @@ export class OrganizationsService {
     }
 
     const role = await this.prisma.role.findFirst({
-      where: { id: roleId, organizationId }
+      where: { id: roleId, organizationId },
     });
 
     if (!role) {
@@ -315,21 +337,23 @@ export class OrganizationsService {
     }
 
     if (role.name === 'Owner' && role.isSystemRole) {
-      throw new ForbiddenException('The Owner role cannot be manually assigned');
+      throw new ForbiddenException(
+        'The Owner role cannot be manually assigned',
+      );
     }
 
     const assignment = await this.prisma.memberRole.upsert({
       where: {
         membershipId_roleId: {
           membershipId,
-          roleId
-        }
+          roleId,
+        },
       },
       update: {},
       create: {
         membershipId,
-        roleId
-      }
+        roleId,
+      },
     });
 
     await this.auditService.createLog({
@@ -344,9 +368,14 @@ export class OrganizationsService {
     return assignment;
   }
 
-  async removeRole(organizationId: string, membershipId: string, roleId: string, actorId?: string) {
+  async removeRole(
+    organizationId: string,
+    membershipId: string,
+    roleId: string,
+    actorId?: string,
+  ) {
     const membership = await this.prisma.membership.findFirst({
-      where: { id: membershipId, organizationId }
+      where: { id: membershipId, organizationId },
     });
 
     if (!membership) {
@@ -354,7 +383,7 @@ export class OrganizationsService {
     }
 
     const role = await this.prisma.role.findFirst({
-      where: { id: roleId, organizationId }
+      where: { id: roleId, organizationId },
     });
 
     if (role && role.name === 'Owner' && role.isSystemRole) {
@@ -364,8 +393,8 @@ export class OrganizationsService {
     const result = await this.prisma.memberRole.deleteMany({
       where: {
         membershipId,
-        roleId
-      }
+        roleId,
+      },
     });
 
     await this.auditService.createLog({

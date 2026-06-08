@@ -21,7 +21,28 @@ import { useDashboard } from '@/context/DashboardContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-// ... (keep interface definitions)
+interface Permission {
+  id: string;
+  name: string;
+  key: string;
+  action: string;
+  resource: string;
+  description: string | null;
+}
+
+interface RolePermission {
+  permission: Permission;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+  isSystemRole: boolean;
+  permissions: RolePermission[];
+}
+
 
 export default function RolesPage() {
   const { currentOrg } = useDashboard();

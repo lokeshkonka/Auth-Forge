@@ -1,4 +1,13 @@
-import { Body, Controller, Post, Req, UseGuards, Param, Delete, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseGuards,
+  Param,
+  Delete,
+  Get,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,7 +32,10 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Accept Invitation' })
   @UseGuards(JwtAuthGuard)
   @Post('accept')
-  acceptInvitation(@Req() req: RequestWithAuth, @Body() dto: AcceptInvitationDto) {
+  acceptInvitation(
+    @Req() req: RequestWithAuth,
+    @Body() dto: AcceptInvitationDto,
+  ) {
     return this.invitationsService.acceptInvitation(req.user.sub, dto);
   }
 }
@@ -47,7 +59,15 @@ export class OrganizationInvitationsController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermissions('member.removed')
   @Delete(':id')
-  revokeInvitation(@Param('organizationId') organizationId: string, @Param('id') id: string, @Req() req: RequestWithAuth) {
-    return this.invitationsService.revokeInvitation(organizationId, id, req.user.sub);
+  revokeInvitation(
+    @Param('organizationId') organizationId: string,
+    @Param('id') id: string,
+    @Req() req: RequestWithAuth,
+  ) {
+    return this.invitationsService.revokeInvitation(
+      organizationId,
+      id,
+      req.user.sub,
+    );
   }
 }

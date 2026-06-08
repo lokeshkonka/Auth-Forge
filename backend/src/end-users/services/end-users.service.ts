@@ -59,7 +59,9 @@ export class EndUsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('An account with this email already exists in this application');
+      throw new ConflictException(
+        'An account with this email already exists in this application',
+      );
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
@@ -96,7 +98,11 @@ export class EndUsersService {
     }
   }
 
-  async login(appId: string, dto: EndUserLoginDto, meta: { userAgent?: string; ipAddress?: string } = {}) {
+  async login(
+    appId: string,
+    dto: EndUserLoginDto,
+    meta: { userAgent?: string; ipAddress?: string } = {},
+  ) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.prisma.endUser.findUnique({
       where: {
@@ -111,14 +117,21 @@ export class EndUsersService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const sessionId = randomUUID();
-    const refreshToken = await this.issueRefreshToken(user.id, sessionId, appId);
+    const refreshToken = await this.issueRefreshToken(
+      user.id,
+      sessionId,
+      appId,
+    );
     const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
 
     await this.sessionsService.createSession(
@@ -152,26 +165,44 @@ export class EndUsersService {
       });
 
     if (payload.appId !== appId) {
-       throw new UnauthorizedException('Token is not valid for this application');
+      throw new UnauthorizedException(
+        'Token is not valid for this application',
+      );
     }
 
-    const session = await this.sessionsService.findActiveSessionById(payload.sessionId);
+    const session = await this.sessionsService.findActiveSessionById(
+      payload.sessionId,
+    );
 
     if (!session || session.endUserId !== payload.sub) {
       throw new UnauthorizedException('Session is no longer valid');
     }
 
-    const isTokenValid = await bcrypt.compare(dto.refreshToken, session.refreshTokenHash);
+    const isTokenValid = await bcrypt.compare(
+      dto.refreshToken,
+      session.refreshTokenHash,
+    );
 
     if (!isTokenValid) {
       throw new UnauthorizedException('Refresh token is invalid');
     }
 
-    const newRefreshToken = await this.issueRefreshToken(payload.sub, session.id, appId);
+    const newRefreshToken = await this.issueRefreshToken(
+      payload.sub,
+      session.id,
+      appId,
+    );
     const refreshTokenHash = await bcrypt.hash(newRefreshToken, 12);
-    await this.sessionsService.updateRefreshTokenHash(session.id, refreshTokenHash);
-    
-    const accessToken = await this.issueAccessToken(payload.sub, session.id, appId);
+    await this.sessionsService.updateRefreshTokenHash(
+      session.id,
+      refreshTokenHash,
+    );
+
+    const accessToken = await this.issueAccessToken(
+      payload.sub,
+      session.id,
+      appId,
+    );
 
     return {
       success: true,
@@ -194,7 +225,7 @@ export class EndUsersService {
 
     // Blacklist access token
     try {
-      const payload = this.jwtService.decode(token) as TokenPayload;
+      const payload = this.jwtService.decode(token);
       if (payload && payload.exp) {
         const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
         if (expiresIn > 0) {
@@ -274,10 +305,14 @@ export class EndUsersService {
     return this.signup(applicationId, dto);
   }
 
-  async updateUser(applicationId: string, id: string, dto: { email?: string; password?: string }) {
+  async updateUser(
+    applicationId: string,
+    id: string,
+    dto: { email?: string; password?: string },
+  ) {
     const user = await this.prisma.endUser.findFirst({
       where: { id, applicationId },
-      include: { application: true }
+      include: { application: true },
     });
 
     if (!user) {
@@ -321,7 +356,7 @@ export class EndUsersService {
   async deleteUser(applicationId: string, id: string) {
     const user = await this.prisma.endUser.findFirst({
       where: { id, applicationId },
-      include: { application: true }
+      include: { application: true },
     });
 
     if (!user) {
@@ -349,7 +384,7 @@ export class EndUsersService {
 
   async bulkImportUsers(applicationId: string, users: EndUserSignupDto[]) {
     const application = await this.prisma.application.findUnique({
-      where: { id: applicationId }
+      where: { id: applicationId },
     });
 
     if (!application) {
@@ -368,7 +403,9 @@ export class EndUsersService {
         results.created++;
       } catch (error: any) {
         results.failed++;
-        results.errors.push(`Failed to import ${userDto.email}: ${error.message}`);
+        results.errors.push(
+          `Failed to import ${userDto.email}: ${error.message}`,
+        );
       }
     }
 
@@ -388,7 +425,8 @@ export class EndUsersService {
   }
 
   async revokeSession(userId: string, sessionIdToRevoke: string) {
-    const session = await this.sessionsService.findActiveSessionById(sessionIdToRevoke);
+    const session =
+      await this.sessionsService.findActiveSessionById(sessionIdToRevoke);
     if (!session || session.endUserId !== userId) {
       throw new NotFoundException('Session not found');
     }
@@ -409,22 +447,32 @@ export class EndUsersService {
     };
   }
 
-  private async issueAccessToken(userId: string, sessionId: string, appId: string) {
+  private async issueAccessToken(
+    userId: string,
+    sessionId: string,
+    appId: string,
+  ) {
     return this.jwtService.signAsync(
       { sub: userId, sessionId, appId },
       {
         secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get<StringValue>('JWT_EXPIRES_IN') ?? '15m',
+        expiresIn:
+          this.configService.get<StringValue>('JWT_EXPIRES_IN') ?? '15m',
       },
     );
   }
 
-  private async issueRefreshToken(userId: string, sessionId: string, appId: string) {
+  private async issueRefreshToken(
+    userId: string,
+    sessionId: string,
+    appId: string,
+  ) {
     return this.jwtService.signAsync(
       { sub: userId, sessionId, appId },
       {
         secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<StringValue>('JWT_REFRESH_EXPIRES_IN') ?? '7d',
+        expiresIn:
+          this.configService.get<StringValue>('JWT_REFRESH_EXPIRES_IN') ?? '7d',
       },
     );
   }

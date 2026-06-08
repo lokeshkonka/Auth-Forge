@@ -1,5 +1,18 @@
-import { Controller, Get, Param, Inject, NotFoundException } from '@nestjs/common';
-import { HealthCheckService, HealthCheck, PrismaHealthIndicator, HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
+import {
+  Controller,
+  Get,
+  Param,
+  Inject,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  HealthCheckService,
+  HealthCheck,
+  PrismaHealthIndicator,
+  HealthIndicator,
+  HealthIndicatorResult,
+  HealthCheckError,
+} from '@nestjs/terminus';
 import { PrismaService } from '../database/prisma.service';
 import Redis from 'ioredis';
 
@@ -17,7 +30,10 @@ export class RedisHealthIndicator extends HealthIndicator {
       }
       throw new HealthCheckError('Redis failed', this.getStatus(key, false));
     } catch (e) {
-      throw new HealthCheckError('Redis failed', this.getStatus(key, false, { message: e.message }));
+      throw new HealthCheckError(
+        'Redis failed',
+        this.getStatus(key, false, { message: e.message }),
+      );
     }
   }
 }

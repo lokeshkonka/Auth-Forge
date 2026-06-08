@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../../audit/services/audit.service';
 import { CreateAppRoleDto, UpdateAppRoleDto } from '../dto/app-role.dto';
@@ -10,7 +14,12 @@ export class AppRolesService {
     private readonly auditService: AuditService,
   ) {}
 
-  async create(appId: string, dto: CreateAppRoleDto, organizationId: string, actorId?: string) {
+  async create(
+    appId: string,
+    dto: CreateAppRoleDto,
+    organizationId: string,
+    actorId?: string,
+  ) {
     const { name, description } = dto;
 
     const existing = await this.prisma.applicationRole.findUnique({
@@ -23,7 +32,9 @@ export class AppRolesService {
     });
 
     if (existing) {
-      throw new ConflictException(`Role with name ${name} already exists in this application`);
+      throw new ConflictException(
+        `Role with name ${name} already exists in this application`,
+      );
     }
 
     const role = await this.prisma.applicationRole.create({
@@ -64,7 +75,13 @@ export class AppRolesService {
     return role;
   }
 
-  async update(appId: string, id: string, dto: UpdateAppRoleDto, organizationId: string, actorId?: string) {
+  async update(
+    appId: string,
+    id: string,
+    dto: UpdateAppRoleDto,
+    organizationId: string,
+    actorId?: string,
+  ) {
     const role = await this.findOne(appId, id);
 
     const updated = await this.prisma.applicationRole.update({
@@ -88,7 +105,12 @@ export class AppRolesService {
     return updated;
   }
 
-  async remove(appId: string, id: string, organizationId: string, actorId?: string) {
+  async remove(
+    appId: string,
+    id: string,
+    organizationId: string,
+    actorId?: string,
+  ) {
     const role = await this.findOne(appId, id);
 
     await this.prisma.applicationRole.delete({
@@ -107,11 +129,21 @@ export class AppRolesService {
     return { success: true };
   }
 
-  async assignToUser(appId: string, userId: string, roleId: string, organizationId: string, actorId?: string) {
+  async assignToUser(
+    appId: string,
+    userId: string,
+    roleId: string,
+    organizationId: string,
+    actorId?: string,
+  ) {
     // Verify user and role belong to the same application
     const [user, role] = await Promise.all([
-      this.prisma.endUser.findFirst({ where: { id: userId, applicationId: appId } }),
-      this.prisma.applicationRole.findFirst({ where: { id: roleId, applicationId: appId } }),
+      this.prisma.endUser.findFirst({
+        where: { id: userId, applicationId: appId },
+      }),
+      this.prisma.applicationRole.findFirst({
+        where: { id: roleId, applicationId: appId },
+      }),
     ]);
 
     if (!user || !role) {
@@ -144,7 +176,13 @@ export class AppRolesService {
     return assignment;
   }
 
-  async unassignFromUser(appId: string, userId: string, roleId: string, organizationId: string, actorId?: string) {
+  async unassignFromUser(
+    appId: string,
+    userId: string,
+    roleId: string,
+    organizationId: string,
+    actorId?: string,
+  ) {
     await this.prisma.endUserRoleAssignment.delete({
       where: {
         endUserId_roleId: {

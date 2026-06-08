@@ -57,7 +57,7 @@ export class EndUserSessionsService {
     if (session) {
       await this.prisma.endUserSession.update({
         where: { id },
-        data: { lastUsedAt: new Date() }
+        data: { lastUsedAt: new Date() },
       });
     }
 
@@ -95,7 +95,7 @@ export class EndUserSessionsService {
       },
       data: {
         revokedAt: new Date(),
-      }
+      },
     });
   }
 
@@ -108,7 +108,7 @@ export class EndUserSessionsService {
       },
       data: {
         revokedAt: new Date(),
-      }
+      },
     });
   }
 }
