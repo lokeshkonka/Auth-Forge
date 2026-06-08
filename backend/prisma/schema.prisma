@@ -170,6 +170,7 @@ model Application {
   organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   roles          ApplicationRole[]
   endUsers       EndUser[]
+  permissions    ApplicationPermission[]
 
   @@unique([organizationId, slug])
 }
