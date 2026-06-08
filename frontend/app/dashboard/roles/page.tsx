@@ -429,7 +429,9 @@ export default function RolesPage() {
                   </label>
                   
                   <div className="space-y-8 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
-                    {Object.entries(allPermissions).map(([category, perms]) => (
+                    {Object.entries(allPermissions)
+                      .filter(([category]) => category !== 'System')
+                      .map(([category, perms]) => (
                       <div key={category} className="space-y-3">
                         <h5 className="text-[10px] font-black uppercase text-text-secondary border-b border-border pb-1 tracking-tighter opacity-50">
                           {category} Management

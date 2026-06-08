@@ -42,7 +42,7 @@ export class AppPermissionsController {
 
   @ApiOperation({ summary: 'Create Application Permission' })
   @Post()
-  @RequirePermissions('app_permission.handle')
+  @RequirePermissions('application.handle')
   create(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -54,14 +54,14 @@ export class AppPermissionsController {
 
   @ApiOperation({ summary: 'List Application Permissions' })
   @Get()
-  @RequirePermissions('app_permission.handle')
+  @RequirePermissions('application.handle')
   findAll(@Param('appId') appId: string) {
     return this.appPermissionsService.findAll(appId);
   }
 
   @ApiOperation({ summary: 'Update Application Permission' })
   @Patch(':id')
-  @RequirePermissions('app_permission.handle')
+  @RequirePermissions('application.handle')
   update(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -74,7 +74,7 @@ export class AppPermissionsController {
 
   @ApiOperation({ summary: 'Delete Application Permission' })
   @Delete(':id')
-  @RequirePermissions('app_permission.handle')
+  @RequirePermissions('application.handle')
   remove(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,

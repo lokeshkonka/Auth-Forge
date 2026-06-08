@@ -52,7 +52,7 @@ export class AppRolesController {
 
   @ApiOperation({ summary: 'List Application Roles' })
   @Get()
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.view')
   findAll(@Param('appId') appId: string) {
     return this.appRolesService.findAll(appId);
   }
@@ -60,7 +60,7 @@ export class AppRolesController {
   @ApiOperation({ summary: 'Get Application Role Details' })
   @Get(':id')
   @ApiParam({ name: 'id', description: 'Role ID' })
-  @RequirePermissions('app_role.handle')
+  @RequirePermissions('app_role.view')
   findOne(@Param('appId') appId: string, @Param('id') id: string) {
     return this.appRolesService.findOne(appId, id);
   }

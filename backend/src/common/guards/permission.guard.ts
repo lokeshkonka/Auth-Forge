@@ -47,16 +47,15 @@ export class PermissionGuard implements CanActivate {
     const user = request.user;
 
     // --- Basic Actions (Allow for any organization member) ---
-    // Anyone in the org can view applications and handle their own sessions
+    // Standard members can view these resources by default
     const basicPermissions = [
       'application.view',
-      'session.handle',
-      'organization.view',
+      'member.view',
       'role.view',
       'permission.read',
-      'member.view',
       'apikey.view',
-      'audit.view'
+      'app_role.view',
+      'organization.view', // Usually needed for dashboard context
     ];
 
     const organizationId =

@@ -3,35 +3,26 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const PERMISSION_CATALOG = [
-  // Organization Management
-  { key: 'organization.handle', name: 'Handle Organization', category: 'Organization', description: 'Update organization details or delete organization', sortOrder: 1 },
-  { key: 'organization.view', name: 'View Organization', category: 'Organization', description: 'View organization details', sortOrder: 2 },
-  
-  // Member Management
-  { key: 'member.handle', name: 'Handle Members', category: 'Members', description: 'Invite, remove, or suspend organization members', sortOrder: 10 },
-  { key: 'member.view', name: 'View Members', category: 'Members', description: 'View organization members', sortOrder: 11 },
-  
-  // Role & Permission Management
-  { key: 'role.handle', name: 'Handle Roles', category: 'Roles', description: 'Create, update, and delete organization roles', sortOrder: 20 },
-  { key: 'role.view', name: 'View Roles', category: 'Roles', description: 'View organization roles', sortOrder: 21 },
-  { key: 'permission.handle', name: 'Handle Permissions', category: 'Permissions', description: 'Manage system-wide permissions', sortOrder: 25 },
-  { key: 'permission.read', name: 'View Permissions', category: 'Permissions', description: 'View system-wide permissions', sortOrder: 26 },
+  // --- Management Permissions (Shown in UI Checklist) ---
+  { key: 'role.handle', name: 'Handle Roles', category: 'Workspace', description: 'Create, update, and delete organization roles', sortOrder: 10 },
+  { key: 'organization.handle', name: 'Handle Organization', category: 'Workspace', description: 'Update organization details or delete organization', sortOrder: 20 },
+  { key: 'member.handle', name: 'Handle Members', category: 'Workspace', description: 'Invite, remove, or manage organization members', sortOrder: 30 },
+  { key: 'application.handle', name: 'Handle Applications', category: 'Workspace', description: 'Create, update, and delete applications', sortOrder: 40 },
+  { key: 'apikey.handle', name: 'Handle API Key', category: 'Workspace', description: 'Create and revoke API keys', sortOrder: 50 },
+  { key: 'app_role.handle', name: 'Handle App Roles', category: 'Workspace', description: 'Manage roles and assignments within applications', sortOrder: 60 },
+  { key: 'end_user.handle', name: 'Handle End User', category: 'Workspace', description: 'Manage application end users', sortOrder: 70 },
+  { key: 'audit.view', name: 'Handle Audit logs', category: 'Workspace', description: 'View organization and application audit logs', sortOrder: 80 },
+  { key: 'session.handle', name: 'Session management', category: 'Workspace', description: 'Manage member sessions (give/remove)', sortOrder: 90 },
+  { key: 'auth.handle', name: 'Login logout', category: 'Workspace', description: 'Manage authentication and login/logout permissions', sortOrder: 100 },
 
-  // Application Management
-  { key: 'application.handle', name: 'Handle Applications', category: 'Applications', description: 'Create, update, and delete applications', sortOrder: 30 },
-  { key: 'application.view', name: 'View Applications', category: 'Applications', description: 'View organization applications', sortOrder: 31 },
-  { key: 'app_role.handle', name: 'Handle App Roles', category: 'Application Roles', description: 'Manage roles and assignments within applications', sortOrder: 35 },
-  { key: 'app_permission.handle', name: 'Handle App Permissions', category: 'Application Permissions', description: 'Manage permissions within applications', sortOrder: 36 },
-
-  // API Key Management
-  { key: 'apikey.handle', name: 'Handle API Keys', category: 'API Keys', description: 'Create and revoke API keys', sortOrder: 40 },
-  { key: 'apikey.view', name: 'View API Keys', category: 'API Keys', description: 'View application API keys', sortOrder: 41 },
-
-  // Audit Logs
-  { key: 'audit.view', name: 'View Audit Logs', category: 'Audit Logs', description: 'View organization and application audit logs', sortOrder: 50 },
-  
-  // Session Management
-  { key: 'session.handle', name: 'Handle Sessions', category: 'Sessions', description: 'Manage member sessions', sortOrder: 80 },
+  // --- System/View Permissions (Internal/Automatic) ---
+  { key: 'organization.view', name: 'View Organization', category: 'System', description: 'View organization details', sortOrder: 101 },
+  { key: 'member.view', name: 'View Members', category: 'System', description: 'View organization members', sortOrder: 102 },
+  { key: 'role.view', name: 'View Roles', category: 'System', description: 'View organization roles', sortOrder: 103 },
+  { key: 'application.view', name: 'View Applications', category: 'System', description: 'View organization applications', sortOrder: 104 },
+  { key: 'apikey.view', name: 'View API Keys', category: 'System', description: 'View application API keys', sortOrder: 105 },
+  { key: 'app_role.view', name: 'View App Roles', category: 'System', description: 'View roles within applications', sortOrder: 106 },
+  { key: 'permission.read', name: 'View Permissions', category: 'System', description: 'View system permissions', sortOrder: 107 },
 ];
 
 async function main() {
@@ -52,42 +43,27 @@ async function main() {
 
   console.log(`Upserted ${PERMISSION_CATALOG.length} permissions.`);
 
-  console.log('Ensuring all organizations have correct owner memberships and full access roles...');
+  const allPermissions = await prisma.permission.findMany();
+  const viewPermissionKeys = [
+    'organization.view',
+    'member.view',
+    'role.view',
+    'application.view',
+    'apikey.view',
+    'app_role.view',
+    'permission.read'
+  ];
+  const viewPermissions = allPermissions.filter(p => viewPermissionKeys.includes(p.key));
+
+  console.log('Ensuring all organizations have correct roles and permissions...');
   const organizations = await prisma.organization.findMany({
     include: {
       memberships: true,
     }
   });
-  const allPermissions = await prisma.permission.findMany();
 
   for (const org of organizations) {
-    // 1. Fix isOwner flag on membership
-    // If org has an ownerId but the membership doesn't have isOwner=true, fix it
-    if (org.ownerId) {
-      await prisma.membership.updateMany({
-        where: {
-          organizationId: org.id,
-          memberId: org.ownerId,
-        },
-        data: {
-          isOwner: true,
-        },
-      });
-    } else if (org.memberships.length > 0) {
-      // If org has no ownerId but has members, pick the first member as owner
-      const firstMember = org.memberships[0];
-      await prisma.organization.update({
-        where: { id: org.id },
-        data: { ownerId: firstMember.memberId },
-      });
-      await prisma.membership.update({
-        where: { id: firstMember.id },
-        data: { isOwner: true },
-      });
-      console.log(`Assigned first member ${firstMember.memberId} as owner for organization ${org.name}`);
-    }
-
-    // 2. Ensure "Owner" role exists and has all permissions
+    // 1. Ensure "Owner" role exists and has all permissions
     const ownerRole = await prisma.role.upsert({
       where: {
         organizationId_name: {
@@ -107,46 +83,92 @@ async function main() {
       },
     });
 
-    // 3. Link all permissions to Owner role
-    const currentPermissions = await prisma.rolePermission.findMany({
-      where: { roleId: ownerRole.id },
-    });
-    
-    const currentPermissionIds = new Set(currentPermissions.map(cp => cp.permissionId));
-    
+    // Link all permissions to Owner role
     for (const perm of allPermissions) {
-      if (!currentPermissionIds.has(perm.id)) {
-        await prisma.rolePermission.create({
-          data: {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
             roleId: ownerRole.id,
             permissionId: perm.id,
           },
-        });
-      }
-    }
-
-    // 4. Ensure the owner actually HAS the Owner role
-    const ownerMembership = await prisma.membership.findFirst({
-      where: {
-        organizationId: org.id,
-        isOwner: true,
-      }
-    });
-
-    if (ownerMembership) {
-      await prisma.memberRole.upsert({
-        where: {
-          membershipId_roleId: {
-            membershipId: ownerMembership.id,
-            roleId: ownerRole.id,
-          }
         },
         update: {},
         create: {
-          membershipId: ownerMembership.id,
           roleId: ownerRole.id,
-        }
+          permissionId: perm.id,
+        },
       });
+    }
+
+    // 2. Ensure "Member" role exists and has view permissions
+    const memberRole = await prisma.role.upsert({
+      where: {
+        organizationId_name: {
+          organizationId: org.id,
+          name: 'Member',
+        },
+      },
+      update: {
+        isSystemRole: true,
+        description: 'Standard member with view access',
+      },
+      create: {
+        organizationId: org.id,
+        name: 'Member',
+        description: 'Standard member with view access',
+        isSystemRole: true,
+      },
+    });
+
+    // Link view permissions to Member role
+    for (const perm of viewPermissions) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: memberRole.id,
+            permissionId: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: memberRole.id,
+          permissionId: perm.id,
+        },
+      });
+    }
+
+    // 3. Assign roles to memberships
+    for (const membership of org.memberships) {
+      if (membership.isOwner) {
+        // Owners get Owner role
+        await prisma.memberRole.upsert({
+          where: {
+            membershipId_roleId: {
+              membershipId: membership.id,
+              roleId: ownerRole.id,
+            }
+          },
+          update: {},
+          create: {
+            membershipId: membership.id,
+            roleId: ownerRole.id,
+          }
+        });
+      } else {
+        // Others get Member role by default if they have no roles
+        const existingRoles = await prisma.memberRole.findMany({
+          where: { membershipId: membership.id }
+        });
+        
+        if (existingRoles.length === 0) {
+          await prisma.memberRole.create({
+            data: {
+              membershipId: membership.id,
+              roleId: memberRole.id,
+            }
+          });
+        }
+      }
     }
   }
 

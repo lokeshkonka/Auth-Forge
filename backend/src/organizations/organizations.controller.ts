@@ -155,7 +155,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Assign Role to Membership' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('role.assigned')
+  @RequirePermissions('role.handle')
   @Post(':orgId/memberships/:membershipId/roles')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   assignRole(
@@ -174,7 +174,7 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'Remove Role from Membership' })
   @UseGuards(JwtAuthGuard, PermissionGuard)
-  @RequirePermissions('role.assigned')
+  @RequirePermissions('role.handle')
   @Delete(':orgId/memberships/:membershipId/roles/:roleId')
   @ApiParam({ name: 'membershipId', description: 'Membership ID' })
   @ApiParam({ name: 'roleId', description: 'Role ID' })
