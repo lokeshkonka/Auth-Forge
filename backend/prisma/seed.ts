@@ -3,59 +3,28 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const PERMISSION_CATALOG = [
-  // Authentication
-  { key: 'customer.signup', name: 'Signup', category: 'Authentication', description: 'Permission to signup' },
-  { key: 'customer.login', name: 'Login', category: 'Authentication', description: 'Permission to login' },
-  { key: 'customer.logout', name: 'Logout', category: 'Authentication', description: 'Permission to logout' },
+  // Application Management
+  { key: 'application.handle', name: 'Handle Applications', category: 'Applications', description: 'Create, update, and delete applications' },
+  { key: 'application.view', name: 'View Applications', category: 'Applications', description: 'View application details and list' },
 
-  // Organizations
-  { key: 'organization.created', name: 'Create Organization', category: 'Organizations', description: 'Permission to create organization' },
-  { key: 'organization.updated', name: 'Update Organization', category: 'Organizations', description: 'Permission to update organization' },
-  { key: 'organization.deleted', name: 'Delete Organization', category: 'Organizations', description: 'Permission to delete organization' },
+  // Role Management
+  { key: 'role.handle', name: 'Handle Roles', category: 'Roles', description: 'Create, update, and delete organization roles' },
+  { key: 'role.view', name: 'View Roles', category: 'Roles', description: 'View organization roles and permissions' },
 
-  // Members
-  { key: 'member.invited', name: 'Invite Member', category: 'Members', description: 'Permission to invite members' },
-  { key: 'member.accepted', name: 'Accept Invitation', category: 'Members', description: 'Permission to accept invitations' },
-  { key: 'member.suspended', name: 'Suspend Member', category: 'Members', description: 'Permission to suspend members' },
-  { key: 'member.removed', name: 'Remove Member', category: 'Members', description: 'Permission to remove members' },
+  // API Key Management
+  { key: 'apikey.handle', name: 'Handle API Keys', category: 'API Keys', description: 'Create and revoke API keys' },
 
-  // Roles
-  { key: 'role.created', name: 'Create Role', category: 'Roles', description: 'Permission to create roles' },
-  { key: 'role.updated', name: 'Update Role', category: 'Roles', description: 'Permission to update roles' },
-  { key: 'role.deleted', name: 'Delete Role', category: 'Roles', description: 'Permission to delete roles' },
-  { key: 'role.assigned', name: 'Assign Role', category: 'Roles', description: 'Permission to assign roles' },
+  // End User Management
+  { key: 'end_user.handle', name: 'Handle End Users', category: 'End Users', description: 'Create, update, and delete end users' },
 
-  // Applications
-  { key: 'application.created', name: 'Create Application', category: 'Applications', description: 'Permission to create applications' },
-  { key: 'application.updated', name: 'Update Application', category: 'Applications', description: 'Permission to update applications' },
-  { key: 'application.deleted', name: 'Delete Application', category: 'Applications', description: 'Permission to delete applications' },
-
-  // API Keys
-  { key: 'apikey.created', name: 'Create API Key', category: 'API Keys', description: 'Permission to create API keys' },
-  { key: 'apikey.revoked', name: 'Revoke API Key', category: 'API Keys', description: 'Permission to revoke API keys' },
-
-  // Application Roles
-  { key: 'app_role.created', name: 'Create App Role', category: 'Application Roles', description: 'Permission to create application roles' },
-  { key: 'app_role.updated', name: 'Update App Role', category: 'Application Roles', description: 'Permission to update application roles' },
-  { key: 'app_role.deleted', name: 'Delete App Role', category: 'Application Roles', description: 'Permission to delete application roles' },
-  { key: 'app_role.assigned', name: 'Assign App Role', category: 'Application Roles', description: 'Permission to assign application roles' },
-  { key: 'app_role.unassigned', name: 'Unassign App Role', category: 'Application Roles', description: 'Permission to unassign application roles' },
-
-  // End Users
-  { key: 'end_user.created', name: 'Create End User', category: 'End Users', description: 'Permission to create end users' },
-  { key: 'end_user.updated', name: 'Update End User', category: 'End Users', description: 'Permission to update end users' },
-  { key: 'end_user.deleted', name: 'Delete End User', category: 'End Users', description: 'Permission to delete end users' },
-  { key: 'bulk_import.completed', name: 'Bulk Import', category: 'End Users', description: 'Permission to perform bulk imports' },
+  // Application Role Management (for End Users)
+  { key: 'app_role.handle', name: 'Handle App Roles', category: 'Application Roles', description: 'Manage roles and assignments within applications' },
 
   // Audit Logs
-  { key: 'audit.read', name: 'Read Audit Logs', category: 'Audit Logs', description: 'Permission to view audit logs' },
+  { key: 'audit.view', name: 'View Audit Logs', category: 'Audit Logs', description: 'View organization and application audit logs' },
 
-  // Permissions
-  { key: 'permission.read', name: 'Read Permissions', category: 'Permissions', description: 'Permission to view available permissions' },
-
-  // Sessions
-  { key: 'session.revoked', name: 'Revoke Session', category: 'Sessions', description: 'Permission to revoke session' },
-  { key: 'session.revoked_all', name: 'Revoke All Sessions', category: 'Sessions', description: 'Permission to revoke all sessions' },
+  // Session Management
+  { key: 'session.handle', name: 'Handle Sessions', category: 'Sessions', description: 'Manage and revoke active sessions' },
 ];
 
 async function main() {

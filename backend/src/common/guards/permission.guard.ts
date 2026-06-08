@@ -37,6 +37,17 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
+    // --- Public / Default Permissions (No Role Required) ---
+    const publicPermissions = [
+      'application.view',
+      'role.view',
+      'session.handle',
+    ];
+
+    if (requiredPermissions.every(p => publicPermissions.includes(p))) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<PermissionRequest>();
     const user = request.user;
 

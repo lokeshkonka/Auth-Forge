@@ -57,7 +57,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'List Application Users' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Get('users')
   findAllUsers(
     @Param('applicationSlug') applicationSlug: string,
@@ -70,7 +70,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Create User (Admin)' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Post('users')
   createUser(
     @Param('applicationSlug') applicationSlug: string,
@@ -84,7 +84,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Update User' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Patch('users/:id')
   updateUser(
     @Param('applicationSlug') applicationSlug: string,
@@ -99,7 +99,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Delete User' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Delete('users/:id')
   deleteUser(
     @Param('applicationSlug') applicationSlug: string,
@@ -113,7 +113,7 @@ export class EndUsersController {
   @ApiOperation({ summary: 'Bulk Import Users' })
   @ApiSecurity('SecretKey')
   @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
-  @Throttle({ secret: { limit: 100, ttl: 60000 } })
+  @Throttle({ secret: { limit: 10000, ttl: 60000 } })
   @Post('users/bulk')
   bulkImportUsers(
     @Param('applicationSlug') applicationSlug: string,

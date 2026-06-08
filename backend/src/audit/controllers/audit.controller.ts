@@ -23,7 +23,7 @@ export class AuditController {
   @Get()
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
   @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
-  @RequirePermissions('audit.read')
+  @RequirePermissions('audit.view')
   async getAuditLogs(
     @Param('orgId') orgId: string,
     @Query('limit') limit?: string,

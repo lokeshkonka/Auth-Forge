@@ -38,7 +38,7 @@ export class ApiKeysController {
 
   @ApiOperation({ summary: 'Create API Key' })
   @Post()
-  @RequirePermissions('apikey.created')
+  @RequirePermissions('apikey.handle')
   create(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
@@ -50,7 +50,7 @@ export class ApiKeysController {
 
   @ApiOperation({ summary: 'List API Keys' })
   @Get()
-  @RequirePermissions('apikey.created')
+  @RequirePermissions('apikey.handle')
   findAll(@Param('orgId') orgId: string, @Param('appId') appId: string) {
     return this.apiKeysService.findAll(orgId, appId);
   }
@@ -58,7 +58,7 @@ export class ApiKeysController {
   @ApiOperation({ summary: 'Remove API Key' })
   @Delete(':id')
   @ApiParam({ name: 'id', description: 'API Key ID' })
-  @RequirePermissions('apikey.revoked')
+  @RequirePermissions('apikey.handle')
   remove(
     @Param('orgId') orgId: string,
     @Param('appId') appId: string,
