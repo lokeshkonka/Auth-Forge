@@ -120,15 +120,15 @@ export class AuthService {
             name: 'Owner',
             description: 'Full access to the organization',
             isSystemRole: true,
-          }
+          },
         });
 
         // 7. Assign Owner Role to the Member's Membership
         await tx.memberRole.create({
           data: {
             membershipId: membership.id,
-            roleId: ownerRole.id
-          }
+            roleId: ownerRole.id,
+          },
         });
 
         // 8. Log organization creation
@@ -140,7 +140,7 @@ export class AuthService {
             resourceType: 'Organization',
             resourceId: organization.id,
             newValue: { name: organization.name, slug: organization.slug },
-          }
+          },
         });
 
         return { organization, member, membership };
@@ -170,18 +170,20 @@ export class AuthService {
     if (!profile) {
       throw new UnauthorizedException('No user from google');
     }
-    
+
     let member = await this.prisma.member.findUnique({
       where: { email: profile.email.toLowerCase() },
     });
 
+    let isNew = false;
     if (!member) {
+      isNew = true;
       member = await this.prisma.member.create({
         data: {
           email: profile.email.toLowerCase(),
           firstName: profile.firstName,
           lastName: profile.lastName,
-        }
+        },
       });
     }
 
@@ -189,8 +191,8 @@ export class AuthService {
       where: {
         provider_providerUserId: {
           provider: 'GOOGLE',
-          providerUserId: profile.providerUserId
-        }
+          providerUserId: profile.providerUserId,
+        },
       },
       update: {
         memberId: member.id,
@@ -200,7 +202,7 @@ export class AuthService {
         providerUserId: profile.providerUserId,
         email: profile.email,
         memberId: member.id,
-      }
+      },
     });
 
     const sessionId = randomUUID();
@@ -217,7 +219,13 @@ export class AuthService {
 
     const accessToken = await this.issueAccessToken(member.id, sessionId);
 
-    await this.logMemberEvent(member.id, 'google.login', 'Session', sessionId, meta);
+    await this.logMemberEvent(
+      member.id,
+      'google.login',
+      'Session',
+      sessionId,
+      meta,
+    );
 
     return {
       success: true,
@@ -225,6 +233,7 @@ export class AuthService {
       data: {
         accessToken,
         refreshToken,
+        isNew,
       },
     };
   }
@@ -275,7 +284,13 @@ export class AuthService {
 
     const accessToken = await this.issueAccessToken(member.id, sessionId);
 
-    await this.logMemberEvent(member.id, 'customer.login', 'Session', sessionId, meta);
+    await this.logMemberEvent(
+      member.id,
+      'customer.login',
+      'Session',
+      sessionId,
+      meta,
+    );
 
     return {
       success: true,
@@ -291,7 +306,13 @@ export class AuthService {
     };
   }
 
-  private async logMemberEvent(memberId: string, action: string, resourceType: string, resourceId?: string, meta: LoginMeta = {}) {
+  private async logMemberEvent(
+    memberId: string,
+    action: string,
+    resourceType: string,
+    resourceId?: string,
+    meta: LoginMeta = {},
+  ) {
     const memberships = await this.prisma.membership.findMany({
       where: { memberId },
     });
@@ -309,7 +330,9 @@ export class AuthService {
     }
 
     if (memberships.length === 0) {
-      const systemOrg = await this.prisma.organization.findUnique({ where: { slug: 'system' } });
+      const systemOrg = await this.prisma.organization.findUnique({
+        where: { slug: 'system' },
+      });
       if (systemOrg) {
         await this.auditService.createLog({
           organizationId: systemOrg.id,
@@ -378,10 +401,7 @@ export class AuthService {
       });
     }
 
-    const newRefreshToken = await this.issueRefreshToken(
-      member.id,
-      session.id,
-    );
+    const newRefreshToken = await this.issueRefreshToken(member.id, session.id);
     const refreshTokenHash = await bcrypt.hash(newRefreshToken, 12);
     await this.sessionsService.updateRefreshTokenHash(
       session.id,
@@ -479,7 +499,7 @@ export class AuthService {
 
     // Blacklist access token
     try {
-      const payload = this.jwtService.decode(token) as TokenPayload;
+      const payload = this.jwtService.decode(token);
       if (payload && payload.exp) {
         const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
         if (expiresIn > 0) {
@@ -490,7 +510,12 @@ export class AuthService {
       console.error('Failed to blacklist token:', err);
     }
 
-    await this.logMemberEvent(session.memberId, 'customer.logout', 'Session', sessionId);
+    await this.logMemberEvent(
+      session.memberId,
+      'customer.logout',
+      'Session',
+      sessionId,
+    );
 
     return {
       success: true,
@@ -500,7 +525,8 @@ export class AuthService {
   }
 
   async getSessions(memberId: string, currentSessionId: string) {
-    const sessions = await this.sessionsService.findSessionsByMemberId(memberId);
+    const sessions =
+      await this.sessionsService.findSessionsByMemberId(memberId);
 
     return {
       success: true,
@@ -537,9 +563,8 @@ export class AuthService {
       return this.revokeAllSessions(memberId, currentSessionId);
     }
 
-    const session = await this.sessionsService.findSessionById(
-      sessionIdToDelete,
-    );
+    const session =
+      await this.sessionsService.findSessionById(sessionIdToDelete);
 
     if (!session || session.memberId !== memberId) {
       throw new NotFoundException({

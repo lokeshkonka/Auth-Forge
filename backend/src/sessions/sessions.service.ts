@@ -11,7 +11,11 @@ export class SessionsService {
     private readonly auditService: AuditService,
   ) {}
 
-  private async logSessionEvent(memberId: string, action: string, resourceId?: string) {
+  private async logSessionEvent(
+    memberId: string,
+    action: string,
+    resourceId?: string,
+  ) {
     const memberships = await this.prisma.membership.findMany({
       where: { memberId },
     });
@@ -77,7 +81,7 @@ export class SessionsService {
     if (session) {
       await this.prisma.memberSession.update({
         where: { id },
-        data: { lastUsedAt: new Date() }
+        data: { lastUsedAt: new Date() },
       });
     }
 
@@ -115,7 +119,7 @@ export class SessionsService {
       },
       data: {
         revokedAt: new Date(),
-      }
+      },
     });
 
     if (result.count > 0) {
@@ -134,7 +138,7 @@ export class SessionsService {
       },
       data: {
         revokedAt: new Date(),
-      }
+      },
     });
 
     if (result.count > 0) {

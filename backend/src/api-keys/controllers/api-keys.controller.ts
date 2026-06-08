@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ApiKeysService } from '../services/api-keys.service';
 import { CreateApiKeyDto } from '../dto/create-api-key.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -37,10 +51,7 @@ export class ApiKeysController {
   @ApiOperation({ summary: 'List API Keys' })
   @Get()
   @RequirePermissions('apikey.created')
-  findAll(
-    @Param('orgId') orgId: string,
-    @Param('appId') appId: string,
-  ) {
+  findAll(@Param('orgId') orgId: string, @Param('appId') appId: string) {
     return this.apiKeysService.findAll(orgId, appId);
   }
 

@@ -1,11 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { AppRolesService } from '../services/app-roles.service';
 import { CreateAppRoleDto, UpdateAppRoleDto } from '../dto/app-role.dto';
 import { AssignAppRoleDto } from '../dto/assign-app-role.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiParam,
+} from '@nestjs/swagger';
 
 type RequestWithAuth = {
   user: {
@@ -88,7 +103,13 @@ export class AppRolesController {
     @Body() dto: AssignAppRoleDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.appRolesService.assignToUser(appId, userId, dto.roleId, orgId, req.user.sub);
+    return this.appRolesService.assignToUser(
+      appId,
+      userId,
+      dto.roleId,
+      orgId,
+      req.user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Unassign Application Role from User' })
@@ -103,6 +124,12 @@ export class AppRolesController {
     @Param('roleId') roleId: string,
     @Req() req: RequestWithAuth,
   ) {
-    return this.appRolesService.unassignFromUser(appId, userId, roleId, orgId, req.user.sub);
+    return this.appRolesService.unassignFromUser(
+      appId,
+      userId,
+      roleId,
+      orgId,
+      req.user.sub,
+    );
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../../audit/services/audit.service';
 import * as crypto from 'node:crypto';
@@ -12,7 +16,12 @@ export class ApiKeysService {
     private readonly auditService: AuditService,
   ) {}
 
-  async create(organizationId: string, applicationId: string, dto: CreateApiKeyDto, actorId?: string) {
+  async create(
+    organizationId: string,
+    applicationId: string,
+    dto: CreateApiKeyDto,
+    actorId?: string,
+  ) {
     const { name } = dto;
     // Verify application belongs to organization
     const application = await this.prisma.application.findFirst({
@@ -28,7 +37,9 @@ export class ApiKeysService {
     });
 
     if (existingKey) {
-      throw new ConflictException(`API Key with name ${name} already exists for this application`);
+      throw new ConflictException(
+        `API Key with name ${name} already exists for this application`,
+      );
     }
 
     const publishableKey = `pk_live_${crypto.randomBytes(24).toString('hex')}`;
@@ -61,7 +72,7 @@ export class ApiKeysService {
       createdAt: apiKey.createdAt,
       expiresAt: apiKey.expiresAt,
       publishableKey, // Return raw key only once
-      secretKey,      // Return raw key only once
+      secretKey, // Return raw key only once
     };
   }
 
@@ -88,12 +99,17 @@ export class ApiKeysService {
     });
   }
 
-  async remove(organizationId: string, applicationId: string, id: string, actorId?: string) {
+  async remove(
+    organizationId: string,
+    applicationId: string,
+    id: string,
+    actorId?: string,
+  ) {
     const apiKey = await this.prisma.apiKey.findFirst({
-      where: { 
-        id, 
-        applicationId, 
-        application: { organizationId } 
+      where: {
+        id,
+        applicationId,
+        application: { organizationId },
       },
     });
 

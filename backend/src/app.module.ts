@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { OrganizationsModule } from './organizations/organizations.module';
@@ -40,28 +40,39 @@ import { RedisModule } from './database/redis.module';
     RedisModule,
     LoggerModule.forRoot({
       pinoHttp: {
-        transport: process.env.NODE_ENV !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? { target: 'pino-pretty', options: { colorize: true } }
+            : undefined,
       },
     }),
     ThrottlerModule.forRootAsync({
-      useFactory: () => ({
-        storage: new ThrottlerStorageRedisService(`redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`),
-        throttlers: [
-          { name: 'global', ttl: 60000, limit: 100 },
-          { name: 'signup', ttl: 60000, limit: 5 },
-          { name: 'login', ttl: 60000, limit: 10 },
-          { name: 'refresh', ttl: 60000, limit: 20 },
-          { name: 'secret', ttl: 60000, limit: 100 },
-        ],
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        const connection =
+          redisUrl ?? `redis://${configService.get('REDIS_HOST', 'localhost')}:${configService.get('REDIS_PORT', 6379)}`;
+        return {
+          storage: new ThrottlerStorageRedisService(connection),
+          throttlers: [
+            { name: 'global', ttl: 60000, limit: 100 },
+            { name: 'signup', ttl: 60000, limit: 5 },
+            { name: 'login', ttl: 60000, limit: 10 },
+            { name: 'refresh', ttl: 60000, limit: 20 },
+            { name: 'secret', ttl: 60000, limit: 100 },
+          ],
+        };
+      },
+      inject: [ConfigService],
     }),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: () => {
         return {
-          stores: [createKeyv(`redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`)],
+          stores: [
+            createKeyv(
+              `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
+            ),
+          ],
         };
       },
     }),

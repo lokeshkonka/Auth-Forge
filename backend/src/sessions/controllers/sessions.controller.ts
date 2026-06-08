@@ -20,7 +20,9 @@ export class SessionsController {
   @ApiOperation({ summary: 'List Active Sessions' })
   @Get()
   async listActiveSessions(@Req() req: RequestWithAuth) {
-    const sessions = await this.sessionsService.findSessionsByMemberId(req.user.sub);
+    const sessions = await this.sessionsService.findSessionsByMemberId(
+      req.user.sub,
+    );
     return {
       success: true,
       statusCode: 200,
@@ -40,7 +42,10 @@ export class SessionsController {
   @ApiOperation({ summary: 'Revoke All Sessions' })
   @Delete('all')
   async revokeAllSessions(@Req() req: RequestWithAuth) {
-    await this.sessionsService.revokeAllSessions(req.user.sub, req.user.sessionId);
+    await this.sessionsService.revokeAllSessions(
+      req.user.sub,
+      req.user.sessionId,
+    );
     return {
       success: true,
       statusCode: 200,
@@ -60,7 +65,7 @@ export class SessionsController {
     }
 
     const result = await this.sessionsService.revokeSession(id, req.user.sub);
-    
+
     if (result.count === 0) {
       return {
         success: false,

@@ -18,24 +18,33 @@ jobs:
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: 'backend/package-lock.json'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
 
-    - name: Install dependencies
+    - name: Install backend dependencies
       run: npm ci
       working-directory: ./backend
-
 
     - name: Generate Prisma Client
       run: npx prisma generate
       working-directory: ./backend
 
-    - name: Build
+    - name: Build backend
       run: npm run build
       working-directory: ./backend
 
-    - name: Run tests
+    - name: Run backend tests
       run: npm run test
       working-directory: ./backend
 
+    - name: Install frontend dependencies
+      run: npm ci
+      working-directory: ./frontend
+
+    - name: Build frontend
+      run: npm run build
+      working-directory: ./frontend
+
     - name: Build Docker Image
-      run: docker build -t authforge-api backend/
+      run: docker build -t authforge .

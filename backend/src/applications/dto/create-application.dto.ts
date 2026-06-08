@@ -7,7 +7,11 @@ export class CreateApplicationDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'my-app', description: 'Unique slug for the application (lowercase, numbers, hyphens)' })
+  @ApiProperty({
+    example: 'my-app',
+    description:
+      'Unique slug for the application (lowercase, numbers, hyphens)',
+  })
   @IsString()
   @IsNotEmpty()
   @Matches(/^[a-z0-9-]+$/, {

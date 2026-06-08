@@ -1,5 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 
 import { InviteMemberDto } from './dto/invite-member.dto';
 import { UpdateMembershipStatusDto } from './dto/update-membership-status.dto';
@@ -86,7 +101,10 @@ export class OrganizationsController {
     @Param('orgId') organizationId: string,
     @Param('membershipId') membershipId: string,
   ) {
-    return this.organizationsService.getMemberDetails(organizationId, membershipId);
+    return this.organizationsService.getMemberDetails(
+      organizationId,
+      membershipId,
+    );
   }
 
   @ApiOperation({ summary: 'Update Membership Status' })
@@ -100,7 +118,12 @@ export class OrganizationsController {
     @Body() dto: UpdateMembershipStatusDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.updateMemberStatus(organizationId, membershipId, dto, req.user.sub);
+    return this.organizationsService.updateMemberStatus(
+      organizationId,
+      membershipId,
+      dto,
+      req.user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Remove Member' })
@@ -113,7 +136,11 @@ export class OrganizationsController {
     @Param('membershipId') membershipId: string,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.removeMember(organizationId, membershipId, req.user.sub);
+    return this.organizationsService.removeMember(
+      organizationId,
+      membershipId,
+      req.user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Assign Role to Membership' })
@@ -127,7 +154,12 @@ export class OrganizationsController {
     @Body() dto: AssignRoleDto,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.assignRole(organizationId, membershipId, dto.roleId, req.user.sub);
+    return this.organizationsService.assignRole(
+      organizationId,
+      membershipId,
+      dto.roleId,
+      req.user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Remove Role from Membership' })
@@ -142,6 +174,11 @@ export class OrganizationsController {
     @Param('roleId') roleId: string,
     @Req() req: RequestWithAuth,
   ) {
-    return this.organizationsService.removeRole(organizationId, membershipId, roleId, req.user.sub);
+    return this.organizationsService.removeRole(
+      organizationId,
+      membershipId,
+      roleId,
+      req.user.sub,
+    );
   }
 }
