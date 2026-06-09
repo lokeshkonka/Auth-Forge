@@ -248,22 +248,44 @@ export function AppApiKeys() {
               </div>
 
               {/* Card Body */}
-              <div className="p-6 grid grid-cols-2 gap-6">
-                 <div className="space-y-1">
-                    <p className="text-[9px] uppercase font-black text-text-secondary opacity-70 tracking-widest flex items-center gap-1.5">
-                      <Calendar size={10} className="text-primary-brand" />
-                      Created On
-                    </p>
-                    <p className="text-xs text-text-primary font-bold">{new Date(key.createdAt).toLocaleDateString()}</p>
+              <div className="p-6 space-y-6 flex-1">
+                 <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                        <p className="text-[9px] uppercase font-black text-text-secondary opacity-70 tracking-widest flex items-center gap-1.5">
+                        <Calendar size={10} className="text-primary-brand" />
+                        Created On
+                        </p>
+                        <p className="text-xs text-text-primary font-bold">{new Date(key.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-[9px] uppercase font-black text-text-secondary opacity-70 tracking-widest flex items-center gap-1.5">
+                        <Activity size={10} className="text-success" />
+                        Last Used
+                        </p>
+                        <p className="text-xs text-text-primary font-bold truncate">
+                        {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
+                        </p>
+                    </div>
                  </div>
-                 <div className="space-y-1">
-                    <p className="text-[9px] uppercase font-black text-text-secondary opacity-70 tracking-widest flex items-center gap-1.5">
-                      <Activity size={10} className="text-success" />
-                      Last Used
-                    </p>
-                    <p className="text-xs text-text-primary font-bold truncate">
-                      {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
-                    </p>
+
+                 {/* Quick Copy Section */}
+                 <div className="space-y-2 pt-2 border-t border-border/30">
+                    <div className="flex justify-between items-center">
+                        <label className="text-[9px] uppercase font-black text-text-secondary tracking-widest">Publishable Key</label>
+                        <button 
+                            onClick={() => copyToClipboard(key.publishableKey!, `pk_list_${key.id}`)}
+                            className="flex items-center gap-1 text-[9px] font-bold text-primary-brand hover:text-primary-brand/80 transition-colors"
+                        >
+                            {copiedField === `pk_list_${key.id}` ? (
+                                <><Check size={10} /> Copied</>
+                            ) : (
+                                <><Copy size={10} /> Copy Key</>
+                            )}
+                        </button>
+                    </div>
+                    <div className="bg-background/80 border border-border rounded px-3 py-2 text-[10px] font-mono text-text-secondary truncate">
+                        {key.publishableKey}
+                    </div>
                  </div>
               </div>
 

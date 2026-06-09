@@ -88,7 +88,7 @@ const apiKey = await this.prisma.apiKey.create({
       throw new NotFoundException('Application not found');
     }
 
-    return this.prisma.apiKey.findMany({
+    const keys = await this.prisma.apiKey.findMany({
       where: { applicationId },
       select: {
         id: true,
@@ -97,7 +97,18 @@ const apiKey = await this.prisma.apiKey.create({
         lastUsedAt: true,
         expiresAt: true,
         createdAt: true,
+        publishableKeyHash: true,
       },
+    });
+
+    return keys.map((key) => {
+      const { publishableKeyHash, ...rest } = key;
+      return {
+        ...rest,
+        publishableKey: publishableKeyHash.startsWith('raw:') 
+          ? publishableKeyHash.replace('raw:', '') 
+          : `pk_live_************************`,
+      };
     });
   }
 
