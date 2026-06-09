@@ -9,7 +9,8 @@ import {
   FileText,
   ChevronRight,
   ArrowLeft,
-  LayoutGrid
+  LayoutGrid,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboard } from '@/context/DashboardContext';
@@ -31,6 +32,7 @@ export function AppNavbar({ isSidebarCollapsed, className }: AppNavbarProps) {
     { name: 'Audit Logs', icon: ReceiptText, id: 'audit-logs' },
     { name: 'API Keys', icon: Key, id: 'api-keys' },
     { name: 'Docs', icon: FileText, id: 'docs' },
+    { name: 'Settings', icon: Settings, id: 'settings' },
   ];
 
   return (

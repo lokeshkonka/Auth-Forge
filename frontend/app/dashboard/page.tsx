@@ -6,7 +6,7 @@ import { useDashboard } from '@/context/DashboardContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, LayoutGrid, ArrowUpRight } from 'lucide-react';
+import { Loader2, Plus, LayoutGrid, ArrowUpRight, ShieldCheck, Globe, Activity } from 'lucide-react';
 import { AppDashboard } from '@/components/dashboard/AppDashboard';
 import { AppUsers } from '@/components/dashboard/AppUsers';
 import { AppRoles } from '@/components/dashboard/AppRoles';
@@ -14,12 +14,17 @@ import { AppPermissions } from '@/components/dashboard/AppPermissions';
 import { AppAuditLogs } from '@/components/dashboard/AppAuditLogs';
 import { AppApiKeys } from '@/components/dashboard/AppApiKeys';
 import { AppDocs } from '@/components/dashboard/AppDocs';
+import { AppSettings } from '@/components/dashboard/AppSettings';
 
 interface Application {
   id: string;
   name: string;
   slug: string;
   description?: string;
+  _count?: {
+    endUsers: number;
+    apiKeys: number;
+  }
 }
 
 export default function DashboardPage() {
@@ -72,7 +77,12 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-brand" /></div>;
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center py-40 gap-4">
+      <Loader2 className="animate-spin text-primary-brand w-12 h-12" />
+      <p className="text-xs text-text-secondary font-mono animate-pulse uppercase tracking-[0.2em]">Synchronizing Environments...</p>
+    </div>
+  );
 
   if (currentApp) {
     switch (activeSubView) {
@@ -88,22 +98,27 @@ export default function DashboardPage() {
         return <AppApiKeys />;
       case 'docs':
         return <AppDocs />;
+      case 'settings':
+        return <AppSettings />;
       default:
         return <AppDashboard />;
     }
   }
 
   return (
-    <>
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-2 text-text-primary">Applications</h1>
-          <p className="text-text-secondary text-sm">Manage your authentication environments.</p>
+    <div className="animate-in fade-in duration-700">
+      <div className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-text-primary tracking-tight uppercase">Applications</h1>
+          <p className="text-text-secondary text-sm font-medium">Isolated secure environments for your users and keys.</p>
         </div>
         {applications.length > 0 && (
-          <button className="btn-primary py-2 px-4 rounded-md text-xs flex items-center justify-center gap-2 self-start sm:self-auto">
+          <button 
+            onClick={() => {/* trigger modal logic if any */}}
+            className="btn-primary py-2.5 px-6 rounded-md text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 self-start sm:self-auto shadow-lg shadow-primary-brand/10 transition-all hover:scale-105"
+          >
             <Plus size={14} />
-            Create New App
+            Create Application
           </button>
         )}
       </div>
@@ -145,40 +160,72 @@ export default function DashboardPage() {
             <div 
               key={app.id} 
               onClick={() => setCurrentApp(app)}
-              className="auth-card p-8 border border-border group hover:border-primary-brand/50 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] transition-all cursor-pointer flex flex-col h-full bg-[#121212] relative overflow-hidden"
+              className="group relative flex flex-col h-full"
             >
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
-                 <ArrowUpRight size={24} className="text-primary-brand" />
-              </div>
-
-              <div className="flex justify-between items-start mb-8">
-                <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center text-text-secondary group-hover:text-primary-brand transition-colors border border-border shadow-lg">
-                  <LayoutGrid size={28} />
+              <div className="absolute inset-0 bg-primary-brand/20 blur-[100px] opacity-0 group-hover:opacity-20 transition-all duration-700 pointer-events-none" />
+              
+              <div className="auth-card flex-1 p-8 border border-border group-hover:border-primary-brand/50 transition-all duration-300 cursor-pointer flex flex-col bg-[#0c0c0c] relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0">
+                   <div className="w-10 h-10 rounded-full bg-primary-brand flex items-center justify-center text-background shadow-xl">
+                      <ArrowUpRight size={20} />
+                   </div>
                 </div>
-                <span className="text-[10px] px-3 py-1 bg-background border border-border rounded-full font-black text-text-secondary uppercase tracking-widest">{app.slug}</span>
-              </div>
-              
-              <h3 className="text-lg font-black mb-3 text-text-primary tracking-tight uppercase group-hover:text-primary-brand transition-colors">{app.name}</h3>
-              <p className="text-xs text-text-secondary mb-8 line-clamp-2 leading-relaxed flex-1 font-medium">{app.description || "Secure authentication environment for this application."}</p>
-              
-              <div className="flex items-center justify-between pt-6 border-t border-border/50">
-                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Active</span>
-                 </div>
-                 <span className="text-[10px] font-black text-primary-brand uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all">Manage App</span>
+
+                <div className="flex justify-between items-start mb-10">
+                  <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center text-text-secondary group-hover:text-primary-brand transition-all duration-500 border border-border shadow-lg group-hover:rotate-[10deg] group-hover:scale-110">
+                    <LayoutGrid size={32} />
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="text-[9px] px-3 py-1 bg-background border border-border rounded-full font-black text-text-secondary uppercase tracking-widest group-hover:text-primary-brand group-hover:border-primary-brand/30 transition-colors">
+                      {app.slug}
+                    </span>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-success/5 border border-success/10">
+                       <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                       <span className="text-[8px] font-black text-success uppercase tracking-widest">Live</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="text-xl font-black mb-4 text-text-primary tracking-tighter uppercase group-hover:text-primary-brand transition-colors duration-300">
+                  {app.name}
+                </h3>
+                <p className="text-xs text-text-secondary mb-10 line-clamp-2 leading-relaxed flex-1 font-medium opacity-70 group-hover:opacity-100 transition-opacity">
+                  {app.description || "Production-grade authentication environment."}
+                </p>
+                
+                <div className="flex items-center justify-between pt-6 border-t border-border/50">
+                   <div className="flex items-center gap-6">
+                      <div className="flex flex-col gap-1">
+                         <span className="text-[9px] font-black text-text-secondary/50 uppercase tracking-widest">Environment</span>
+                         <span className="text-[10px] font-black text-text-primary uppercase tracking-tighter">Production</span>
+                      </div>
+                      <div className="w-px h-6 bg-border" />
+                      <div className="flex flex-col gap-1">
+                         <span className="text-[9px] font-black text-text-secondary/50 uppercase tracking-widest">Region</span>
+                         <span className="text-[10px] font-black text-text-primary uppercase tracking-tighter">Global</span>
+                      </div>
+                   </div>
+                   <div className="text-[9px] font-black text-primary-brand uppercase tracking-[0.2em] group-hover:translate-x-1 transition-transform">
+                      Inspect Environment
+                   </div>
+                </div>
               </div>
             </div>
           ))}
-          <button 
-            onClick={() => { /* Potential modal trigger */ }}
-            className="auth-card p-8 border-dashed border-2 border-border flex flex-col items-center justify-center gap-4 hover:bg-surface-hover/30 hover:border-primary-brand/50 transition-all group min-h-[260px] bg-transparent"
+          
+          <div 
+            className="auth-card p-8 border-dashed border-2 border-border/40 flex flex-col items-center justify-center gap-6 hover:bg-surface-hover/30 hover:border-primary-brand/50 transition-all group min-h-[340px] bg-transparent cursor-pointer"
           >
-            <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center text-text-secondary group-hover:scale-110 group-hover:text-primary-brand transition-all border border-border"><Plus size={28} /></div>
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-text-primary">Create New App</span>
-          </button>
+            <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center text-text-secondary group-hover:scale-110 group-hover:text-primary-brand transition-all border border-border group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+              <Plus size={40} strokeWidth={1.5} />
+            </div>
+            <div className="text-center space-y-1">
+               <span className="block text-xs font-black uppercase tracking-[0.2em] text-text-primary">Deploy New App</span>
+               <span className="block text-[10px] font-medium text-text-secondary uppercase tracking-widest opacity-50">Create Isolated Context</span>
+            </div>
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

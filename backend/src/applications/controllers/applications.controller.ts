@@ -116,4 +116,28 @@ export class ApplicationsController {
       application,
     };
   }
+
+  @ApiOperation({ summary: 'List Application Users' })
+  @Get(':appId/users')
+  @ApiParam({ name: 'appId', description: 'Application ID' })
+  @RequirePermissions('application.view')
+  findAllUsers(
+    @Param('orgId') orgId: string,
+    @Param('appId') appId: string,
+  ) {
+    return this.applicationsService.findAllUsers(orgId, appId);
+  }
+
+  @ApiOperation({ summary: 'Remove User from Application' })
+  @Delete(':appId/users/:userId')
+  @ApiParam({ name: 'appId', description: 'Application ID' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @RequirePermissions('application.handle')
+  removeUser(
+    @Param('orgId') orgId: string,
+    @Param('appId') appId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.applicationsService.removeUser(orgId, appId, userId);
+  }
 }

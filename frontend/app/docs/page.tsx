@@ -28,10 +28,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 type DocSection = 'intro' | 'auth' | 'api-ref' | 'playground';
 
 export default function DocsPage() {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<DocSection>('intro');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -107,11 +109,13 @@ export default function DocsPage() {
           <Link href="/dashboard" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors hidden sm:block">
             Dashboard
           </Link>
-          <Link href="/auth">
-            <button className="bg-white text-black px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-white/90 transition-all">
-              Sign Up Free
-            </button>
-          </Link>
+          {!user && (
+            <Link href="/auth">
+              <button className="bg-white text-black px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-white/90 transition-all">
+                Sign Up Free
+              </button>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -366,6 +370,20 @@ export default function DocsPage() {
                     </div>
                   </div>
 
+                  {/* Management Endpoints */}
+                  <div className="space-y-8">
+                    <div className="flex items-center gap-4">
+                      <Shield size={20} className="text-white/20" />
+                      <h2 className="text-xl font-black uppercase tracking-[0.2em]">Management (Secret Key Required)</h2>
+                    </div>
+                    <div className="space-y-1 border-l-2 border-white/5 ml-2 pl-6">
+                      <RefEntry method="GET" path="/:slug/users" desc="List application users" />
+                      <RefEntry method="POST" path="/:slug/users" desc="Create user admin-side" />
+                      <RefEntry method="DELETE" path="/:slug/users/:id" desc="Delete application user" />
+                      <RefEntry method="GET" path="/:slug/all-roles" desc="Get all application roles" />
+                    </div>
+                  </div>
+
                   {/* Audit Logs */}
                   <div className="space-y-8">
                     <div className="flex items-center gap-4">
@@ -411,6 +429,15 @@ export default function DocsPage() {
                     <div className="space-y-6">
                       <PlaygroundInput label="Application Slug" value={appSlug} onChange={setAppSlug} />
                       <PlaygroundInput label="Endpoint Path" value={endpoint} onChange={setEndpoint} />
+                      <div className="p-3 bg-white/5 border border-white/10 rounded-md">
+                        <p className="text-[9px] text-white/40 font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <AlertCircle size={10} />
+                          Security Note
+                        </p>
+                        <p className="text-[10px] text-white/40 leading-relaxed">
+                          Use <strong>Secret Keys</strong> (sk_live_...) for management endpoints like /users and /all-roles. Use <strong>Publishable Keys</strong> (pk_live_...) for /auth endpoints.
+                        </p>
+                      </div>
                       <PlaygroundInput label="x-api-key" value={apiKey} onChange={setApiKey} type="password" placeholder="pk_live_... or sk_live_..." />
 
                       {method === 'POST' && (

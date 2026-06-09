@@ -55,6 +55,7 @@ export function AppApiKeys() {
   // View Details state
   const [viewingKey, setViewingKey] = useState<ApiKey | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Creation success state
   const [createdKey, setCreatedKey] = useState<ApiKey | null>(null);
@@ -141,6 +142,11 @@ export function AppApiKeys() {
     setShowSecret(false);
   };
 
+  const filteredKeys = keys.filter(key => 
+    key.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    key.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -161,13 +167,25 @@ export function AppApiKeys() {
           <p className="text-text-secondary text-sm">Authentication keys used to access {currentApp?.name} APIs.</p>
         </div>
         
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary py-2.5 px-6 rounded-md text-xs flex items-center justify-center gap-2 font-black uppercase tracking-widest shrink-0 shadow-lg shadow-primary-brand/10 hover:shadow-primary-brand/20 transition-all"
-        >
-          <Plus size={14} />
-          Create New Keypair
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+            <input 
+              type="text" 
+              placeholder="Search keys..."
+              className="w-full bg-surface border border-border rounded-md pl-10 pr-4 py-2 text-xs text-text-primary focus:border-text-primary transition-all outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="btn-primary py-2.5 px-6 rounded-md text-xs flex items-center justify-center gap-2 font-black uppercase tracking-widest shrink-0 shadow-lg shadow-primary-brand/10 hover:shadow-primary-brand/20 transition-all"
+          >
+            <Plus size={14} />
+            New Keypair
+          </button>
+        </div>
       </div>
 
       {/* Warning Banner */}
@@ -181,19 +199,23 @@ export function AppApiKeys() {
         </div>
       </div>
 
-      {keys.length === 0 ? (
+      {filteredKeys.length === 0 ? (
         <div className="auth-card py-20 text-center border-dashed border-2 border-border flex flex-col items-center gap-4 bg-surface/20">
           <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center border border-border">
             <Key size={32} className="text-text-secondary" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-text-primary">No API keys found</h3>
-            <p className="text-xs text-text-secondary">Generate your first keypair to start integrating.</p>
+            <h3 className="text-lg font-bold text-text-primary">
+              {searchTerm ? 'No matching keys found' : 'No API keys found'}
+            </h3>
+            <p className="text-xs text-text-secondary">
+              {searchTerm ? 'Try adjusting your search term.' : 'Generate your first keypair to start integrating.'}
+            </p>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {keys.map((key) => (
+          {filteredKeys.map((key) => (
             <div key={key.id} className="auth-card group border border-border hover:border-text-secondary/30 transition-all flex flex-col h-full bg-[#181818] relative overflow-visible shadow-lg">
               {/* Card Header */}
               <div className="p-6 border-b border-border/50 flex justify-between items-start bg-surface-hover/20">

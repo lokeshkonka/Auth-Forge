@@ -192,8 +192,10 @@ export function AppRoles() {
                   <td colSpan={4} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-50">
                       <ShieldCheck size={40} className="text-text-secondary mb-2" />
-                      <p className="text-sm font-medium">No custom roles found.</p>
-                      <p className="text-xs">Create roles to categorize your application users.</p>
+                      <p className="text-sm font-medium">
+                        {searchTerm ? 'No matching roles found' : 'No custom roles found.'}
+                      </p>
+                      {!searchTerm && <p className="text-xs">Create roles to categorize your application users.</p>}
                     </div>
                   </td>
                 </tr>

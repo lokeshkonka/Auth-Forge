@@ -185,8 +185,10 @@ export function AppPermissions() {
                   <td colSpan={4} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-50">
                       <Lock size={40} className="text-text-secondary mb-2" />
-                      <p className="text-sm font-medium">No custom permissions found.</p>
-                      <p className="text-xs">Add permissions that your app will check for.</p>
+                      <p className="text-sm font-medium">
+                        {searchTerm ? 'No matching permissions found' : 'No custom permissions found.'}
+                      </p>
+                      {!searchTerm && <p className="text-xs">Add permissions that your app will check for.</p>}
                     </div>
                   </td>
                 </tr>

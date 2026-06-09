@@ -328,6 +328,16 @@ export function AppDocs() {
                 </div>
               </div>
 
+              <div className="p-3 bg-primary-brand/5 border border-primary-brand/10 rounded-md">
+                <p className="text-[9px] text-primary-brand font-black uppercase tracking-widest mb-1 flex items-center gap-2">
+                  <AlertCircle size={10} />
+                  Secret Key Required
+                </p>
+                <p className="text-[10px] text-text-secondary leading-relaxed">
+                  Management APIs (e.g. /users, /all-roles) require your <strong>Secret Key</strong>.
+                </p>
+              </div>
+
               <div>
                 <label className="text-[10px] uppercase font-bold text-text-secondary block mb-2">x-api-key Header</label>
                 <input 

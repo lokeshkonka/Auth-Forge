@@ -80,18 +80,24 @@ export class ApplicationsService {
       const dateString = date.toISOString().split('T')[0];
       
       // Count audit logs for this application on this day
+      // We look for logs where resourceType is Application (resourceId is app.id)
+      // OR where resourceType is EndUser and they belong to this application
       const count = await this.prisma.auditLog.count({
         where: {
-          resourceType: 'Application',
-          resourceId: id,
+          organizationId,
           createdAt: {
             gte: new Date(dateString),
             lt: new Date(new Date(dateString).getTime() + 86400000),
           },
+          OR: [
+            { resourceType: 'Application', resourceId: id },
+            { resourceType: 'ApiKey', resourceId: { in: await this.prisma.apiKey.findMany({ where: { applicationId: id }, select: { id: true } }).then(keys => keys.map(k => k.id)) } },
+            { resourceType: 'EndUser', resourceId: { in: await this.prisma.endUser.findMany({ where: { applicationId: id }, select: { id: true } }).then(users => users.map(u => u.id)) } }
+          ]
         },
       });
 
-      trends.push({ date: dateString, count: count || Math.floor(Math.random() * 20) }); // Add random for prototype feel if 0
+      trends.push({ date: dateString, count });
     }
 
     return {
@@ -99,6 +105,52 @@ export class ApplicationsService {
       apiKeyCount,
       trends,
     };
+  }
+
+  async findAllUsers(organizationId: string, applicationId: string) {
+    await this.findOne(organizationId, applicationId);
+    const users = await this.prisma.endUser.findMany({
+      where: { applicationId },
+      include: {
+        roleAssignments: {
+          include: {
+            role: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      success: true,
+      data: users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+        roles: u.roleAssignments.map((ra) => ({
+          id: ra.role.id,
+          name: ra.role.name,
+        })),
+      })),
+    };
+  }
+
+  async removeUser(organizationId: string, applicationId: string, userId: string) {
+    await this.findOne(organizationId, applicationId);
+    const user = await this.prisma.endUser.findFirst({
+      where: { id: userId, applicationId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found in this application');
+    }
+
+    await this.prisma.endUser.delete({
+      where: { id: userId },
+    });
+
+    return { success: true };
   }
 
   async findOne(organizationId: string, id: string) {

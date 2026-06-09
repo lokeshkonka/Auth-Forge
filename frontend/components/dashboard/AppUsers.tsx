@@ -12,7 +12,8 @@ import {
   ChevronDown,
   ChevronUp,
   History,
-  AlertCircle
+  AlertCircle,
+  Check
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDashboard } from '@/context/DashboardContext';
@@ -35,10 +36,10 @@ interface AppUser {
 export function AppUsers() {
   const { currentOrg, currentApp } = useDashboard();
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   
   // Custom delete confirmation
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
@@ -48,8 +49,12 @@ export function AppUsers() {
     if (!currentOrg || !currentApp) return;
     try {
       setIsLoading(true);
-      const data = await api.get(`/organizations/${currentOrg.id}/applications/${currentApp.id}/users`);
-      setUsers(data.data);
+      const [usersData, rolesData] = await Promise.all([
+        api.get(`/organizations/${currentOrg.id}/applications/${currentApp.id}/users`),
+        api.get(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles`)
+      ]);
+      setUsers(usersData.data);
+      setAvailableRoles(rolesData);
     } catch (err) {
       console.error("Failed to fetch application users", err);
     } finally {
@@ -60,6 +65,28 @@ export function AppUsers() {
   useEffect(() => {
     fetchUsers();
   }, [currentOrg, currentApp]);
+
+  const handleAssignRole = async (userId: string, roleId: string) => {
+    if (!currentOrg || !currentApp) return;
+    try {
+      await api.post(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles/assignments/${userId}`, {
+        roleId
+      });
+      await fetchUsers();
+    } catch (err: any) {
+      alert(err.message || "Failed to assign role");
+    }
+  };
+
+  const handleUnassignRole = async (userId: string, roleId: string) => {
+    if (!currentOrg || !currentApp) return;
+    try {
+      await api.delete(`/organizations/${currentOrg.id}/applications/${currentApp.id}/roles/assignments/${userId}/${roleId}`);
+      await fetchUsers();
+    } catch (err: any) {
+      alert(err.message || "Failed to unassign role");
+    }
+  };
 
   const handleRemoveUser = async () => {
     if (!currentOrg || !currentApp || !userToDelete) return;
@@ -130,8 +157,10 @@ export function AppUsers() {
                   <td colSpan={4} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-50">
                       <Users size={40} className="text-text-secondary mb-2" />
-                      <p className="text-sm font-medium">No users found for this application.</p>
-                      <p className="text-xs">Users who sign up for your app will appear here.</p>
+                      <p className="text-sm font-medium">
+                        {searchTerm ? 'No matching users found' : 'No users found for this application.'}
+                      </p>
+                      {!searchTerm && <p className="text-xs">Users who sign up for your app will appear here.</p>}
                     </div>
                   </td>
                 </tr>
@@ -187,14 +216,32 @@ export function AppUsers() {
                                  <span className="text-[10px] font-mono text-text-secondary">UID: {user.id}</span>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 <div className="p-4 bg-surface border border-border rounded-lg space-y-2">
-                                    <p className="text-[10px] uppercase text-text-secondary font-bold">Activity</p>
-                                    <div className="flex flex-col gap-1">
-                                      <div className="flex justify-between text-xs">
-                                        <span className="text-text-secondary">Last updated</span>
-                                        <span className="text-text-primary font-medium">{new Date(user.updatedAt).toLocaleString()}</span>
-                                      </div>
+                                 <div className="p-4 bg-surface border border-border rounded-lg space-y-4">
+                                    <p className="text-[10px] uppercase text-text-secondary font-bold">Role Management</p>
+                                    <div className="flex flex-wrap gap-2">
+                                       {availableRoles.map(role => {
+                                          const isAssigned = user.roles.some(r => r.id === role.id);
+                                          return (
+                                             <button
+                                                key={role.id}
+                                                onClick={() => isAssigned ? handleUnassignRole(user.id, role.id) : handleAssignRole(user.id, role.id)}
+                                                className={cn(
+                                                   "px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-tighter transition-all flex items-center gap-2 border",
+                                                   isAssigned 
+                                                      ? "bg-primary-brand text-background border-primary-brand" 
+                                                      : "bg-background text-text-secondary border-border hover:border-text-secondary"
+                                                )}
+                                             >
+                                                {isAssigned && <Check size={12} />}
+                                                {role.name}
+                                             </button>
+                                          );
+                                       })}
+                                       {availableRoles.length === 0 && (
+                                          <p className="text-[10px] text-text-secondary italic">No roles defined for this application.</p>
+                                       )}
                                     </div>
+                                    <p className="text-[9px] text-text-secondary opacity-60">Click a role to assign or unassign it directly.</p>
                                  </div>
                                  <div className="p-4 bg-surface border border-border rounded-lg space-y-2 text-right">
                                     <p className="text-[10px] uppercase text-text-secondary font-bold">Management Actions</p>

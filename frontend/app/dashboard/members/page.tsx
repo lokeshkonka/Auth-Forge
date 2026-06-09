@@ -67,6 +67,7 @@ export default function MembersPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Invite Form State
   const [inviteEmail, setInviteEmail] = useState("");
@@ -177,6 +178,12 @@ export default function MembersPage() {
     }
   };
 
+  const filteredMembers = members.filter(member => {
+    const fullName = `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase();
+    return member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           fullName.includes(searchTerm.toLowerCase());
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -195,25 +202,37 @@ export default function MembersPage() {
           </h1>
           <p className="text-text-secondary text-sm">Manage access and roles for your organization.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsHistoryModalOpen(true)}
-            className="btn-secondary py-2 px-4 rounded-md text-xs flex items-center justify-center gap-2 font-bold"
-          >
-            <History size={14} />
-            Previous Invites
-          </button>
-          <button 
-            onClick={() => {
-              setIsInviteModalOpen(true);
-              setGeneratedLink(null);
-              setInviteEmail("");
-            }}
-            className="btn-primary py-2 px-6 rounded-md text-xs flex items-center justify-center gap-2 font-bold"
-          >
-            <UserPlus size={14} />
-            Invite Member
-          </button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+            <input 
+              type="text" 
+              placeholder="Search members..."
+              className="w-full bg-surface border border-border rounded-md pl-10 pr-4 py-2 text-xs text-text-primary focus:border-text-primary transition-all outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button 
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="btn-secondary py-2 px-4 rounded-md text-xs flex items-center justify-center gap-2 font-bold flex-1 sm:flex-initial"
+            >
+                <History size={14} />
+                Invites
+            </button>
+            <button 
+                onClick={() => {
+                setIsInviteModalOpen(true);
+                setGeneratedLink(null);
+                setInviteEmail("");
+                }}
+                className="btn-primary py-2 px-6 rounded-md text-xs flex items-center justify-center gap-2 font-bold flex-1 sm:flex-initial"
+            >
+                <UserPlus size={14} />
+                Invite
+            </button>
+          </div>
         </div>
       </div>
 
@@ -229,8 +248,20 @@ export default function MembersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-sm">
-              {members.map((member) => (
-                <React.Fragment key={member.id}>
+              {filteredMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-2 opacity-50">
+                      <Users size={40} className="text-text-secondary mb-2" />
+                      <p className="text-sm font-medium">
+                        {searchTerm ? 'No matching members found' : 'No team members found.'}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredMembers.map((member) => (
+                  <React.Fragment key={member.id}>
                   <tr className="hover:bg-surface-hover/30 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">

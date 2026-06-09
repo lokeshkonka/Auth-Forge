@@ -169,6 +169,11 @@ export default function RolesPage() {
     }
   };
 
+  const filteredRoles = roles.filter(role => 
+    role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (role.description || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -187,13 +192,25 @@ export default function RolesPage() {
           </h1>
           <p className="text-text-secondary text-sm">Define and manage access control policies for your organization.</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="btn-primary py-2 px-6 rounded-md text-xs flex items-center justify-center gap-2 self-start sm:self-auto font-bold"
-        >
-          <Plus size={14} />
-          Create Role
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+            <input 
+              type="text" 
+              placeholder="Search roles..."
+              className="w-full bg-surface border border-border rounded-md pl-10 pr-4 py-2 text-xs text-text-primary focus:border-text-primary transition-all outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="btn-primary py-2 px-6 rounded-md text-xs flex items-center justify-center gap-2 font-bold w-full sm:w-auto whitespace-nowrap"
+          >
+            <Plus size={14} />
+            Create Role
+          </button>
+        </div>
       </div>
 
       {roles.length === 0 ? (
@@ -226,11 +243,21 @@ export default function RolesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {roles.map((role) => {
-                  const isOwner = role.name.toLowerCase() === 'owner' || role.isSystemRole;
-                  
-                  return (
-                    <React.Fragment key={role.id}>
+                {filteredRoles.length === 0 && roles.length > 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-2 opacity-50">
+                        <ShieldCheck size={40} className="text-text-secondary mb-2" />
+                        <p className="text-sm font-medium">No matching roles found.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRoles.map((role) => {
+                    const isOwner = role.name.toLowerCase() === 'owner' || role.isSystemRole;
+                    
+                    return (
+                      <React.Fragment key={role.id}>
                       <tr className="hover:bg-surface-hover/30 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex flex-col">

@@ -1,21 +1,81 @@
 "use client";
 
-import React from 'react';
-import { Settings as SettingsIcon, Save, Trash2, Shield, Bell, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, Save, Trash2, Shield, Bell, CreditCard, Loader2, Check } from 'lucide-react';
+import { useDashboard } from '@/context/DashboardContext';
+import { api } from '@/lib/api';
+import { ConfirmModal } from '@/components/dashboard/ConfirmModal';
 
 export default function SettingsPage() {
+  const { currentOrg, refreshOrgs } = useDashboard();
+  const [name, setName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  useEffect(() => {
+    if (currentOrg) {
+      setName(currentOrg.name);
+    }
+  }, [currentOrg]);
+
+  const handleSave = async () => {
+    if (!currentOrg || !name) return;
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      await api.patch(`/organizations/${currentOrg.id}`, { name });
+      setMessage({ type: 'success', text: 'Settings updated successfully!' });
+      await refreshOrgs();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to update settings' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!currentOrg) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/organizations/${currentOrg.id}`);
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to delete organization' });
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  if (!currentOrg) return null;
+
   return (
     <>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold mb-2 text-text-primary">Organization Settings</h1>
-          <p className="text-text-secondary text-sm">Update your workspace configuration and billing.</p>
+          <p className="text-text-secondary text-sm">Update your workspace configuration and policies.</p>
         </div>
-        <button className="btn-primary py-2 px-6 rounded-md text-xs flex items-center justify-center gap-2 self-start sm:self-auto font-bold">
-          <Save size={14} />
+        <button 
+          onClick={handleSave}
+          disabled={isSaving || name === currentOrg.name}
+          className="btn-primary py-2 px-6 rounded-md text-xs flex items-center justify-center gap-2 self-start sm:self-auto font-black uppercase tracking-widest disabled:opacity-50"
+        >
+          {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save Changes
         </button>
       </div>
+
+      {message && (
+        <div className={cn(
+          "mb-6 p-4 rounded-lg border text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2",
+          message.type === 'success' ? "bg-success/10 border-success/20 text-success" : "bg-error/10 border-error/20 text-error"
+        )}>
+          {message.type === 'success' ? <Check size={18} /> : <Trash2 size={18} />}
+          {message.text}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -29,27 +89,20 @@ export default function SettingsPage() {
                 <label className="text-[10px] uppercase tracking-widest font-bold text-text-secondary">Organization Name</label>
                 <input 
                   type="text" 
-                  defaultValue="Acme Corp"
-                  className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-primary focus:border-text-primary transition-all"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-primary focus:border-text-primary transition-all outline-none"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-text-secondary">Slug</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold text-text-secondary">Slug (Permanent)</label>
                 <input 
                   type="text" 
-                  defaultValue="acme-corp"
+                  value={currentOrg.slug}
                   className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-secondary font-mono opacity-60 cursor-not-allowed"
                   disabled
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-text-secondary">Billing Email</label>
-              <input 
-                type="email" 
-                defaultValue="billing@acme.com"
-                className="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm text-text-primary focus:border-text-primary transition-all"
-              />
             </div>
           </div>
 
@@ -59,25 +112,26 @@ export default function SettingsPage() {
               Security Policies
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-surface-hover/30 rounded-lg border border-border">
+              <div className="flex items-center justify-between p-4 bg-surface-hover/30 rounded-lg border border-border opacity-60 grayscale cursor-not-allowed">
                 <div className="space-y-0.5">
                   <div className="text-sm font-bold text-text-primary">Enforce Multi-Factor Authentication (MFA)</div>
                   <div className="text-xs text-text-secondary">Require all members to use MFA to access the organization.</div>
                 </div>
-                <div className="w-10 h-5 bg-primary-brand/20 rounded-full relative cursor-pointer border border-primary-brand/50">
-                  <div className="absolute right-0.5 top-0.5 w-3.5 h-3.5 bg-primary-brand rounded-full shadow-sm" />
+                <div className="w-10 h-5 bg-border rounded-full relative">
+                  <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-text-secondary rounded-full shadow-sm" />
                 </div>
               </div>
-              <div className="flex items-center justify-between p-4 bg-surface-hover/30 rounded-lg border border-border">
+              <div className="flex items-center justify-between p-4 bg-surface-hover/30 rounded-lg border border-border opacity-60 grayscale cursor-not-allowed">
                 <div className="space-y-0.5">
                   <div className="text-sm font-bold text-text-primary">Restrict Member Invitations</div>
                   <div className="text-xs text-text-secondary">Only owners can invite new members.</div>
                 </div>
-                <div className="w-10 h-5 bg-border rounded-full relative cursor-pointer">
+                <div className="w-10 h-5 bg-border rounded-full relative">
                   <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-text-secondary rounded-full shadow-sm" />
                 </div>
               </div>
             </div>
+            <p className="text-[10px] text-text-secondary italic">Note: Security policy configuration is available for Enterprise plans.</p>
           </div>
 
           {/* Danger Zone */}
@@ -85,8 +139,11 @@ export default function SettingsPage() {
             <h3 className="text-lg font-bold text-error flex items-center gap-2 mb-2">
               Danger Zone
             </h3>
-            <p className="text-xs text-text-secondary mb-6">Once you delete an organization, there is no going back. Please be certain.</p>
-            <button className="px-4 py-2 rounded-md bg-error/10 text-error border border-error/20 text-xs font-bold hover:bg-error/20 transition-all flex items-center gap-2">
+            <p className="text-xs text-text-secondary mb-6">Once you delete an organization, there is no going back. All applications and users will be permanently removed.</p>
+            <button 
+              onClick={() => setShowDeleteModal(true)}
+              className="px-4 py-2 rounded-md bg-error/10 text-error border border-error/20 text-xs font-bold hover:bg-error/20 transition-all flex items-center gap-2"
+            >
               <Trash2 size={14} />
               Delete Organization
             </button>
@@ -98,7 +155,7 @@ export default function SettingsPage() {
           <div className="auth-card p-6 border border-border">
             <h4 className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-4">Quick Links</h4>
             <div className="space-y-1">
-              {['Billing History', 'Usage Reports', 'Security Logs', 'API Status'].map(link => (
+              {['Usage Reports', 'Security Logs', 'API Status'].map(link => (
                 <button key={link} className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-md transition-all">
                   {link}
                 </button>
@@ -119,6 +176,18 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        title="Delete Organization?"
+        description={`Are you sure you want to delete ${currentOrg.name}? This action is permanent and will delete all associated applications, keys, and audit logs.`}
+        confirmText="Yes, Delete Organization"
+      />
     </>
   );
 }
+
+import { cn } from '@/lib/utils';
