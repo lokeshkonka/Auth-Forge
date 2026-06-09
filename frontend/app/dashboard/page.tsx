@@ -18,7 +18,6 @@ import { AppSettings } from '@/components/dashboard/AppSettings';
 
 export default function DashboardPage() {
   const router = useRouter();
-...
   const { currentOrg, setCurrentApp, currentApp, activeSubView } = useDashboard();
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -203,6 +202,7 @@ export default function DashboardPage() {
           ))}
           
           <div 
+            onClick={() => {/* toggle create modal */}}
             className="auth-card p-8 border-dashed border-2 border-border/40 flex flex-col items-center justify-center gap-6 hover:bg-surface-hover/30 hover:border-primary-brand/50 transition-all group min-h-[340px] bg-transparent cursor-pointer"
           >
             <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center text-text-secondary group-hover:scale-110 group-hover:text-primary-brand transition-all border border-border group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
