@@ -26,6 +26,8 @@ AuthForge categorizes its APIs into three distinct tiers:
 
 ![Authentication Features 2](./Docs/Authentication-Features2.png)
 
+![Railway Deployment](./Docs/Railway.png)
+
 | Tier | Authentication | Use Case |
 | :--- | :--- | :--- |
 | **Management Dashboard** | `Bearer Member-JWT` | Organization admins managing teams, roles, and apps. |
@@ -83,3 +85,27 @@ curl -X POST http://localhost:3000/:applicationSlug/auth/signup \
 
 ---
 *AuthForge is designed for security and scale. For implementation details, refer to `backend/Docs/`.*
+
+## 📸 Screenshots
+
+### Dashboard Overview
+![Dashboard](./Docs/Screenshots/dashboard.png)
+
+### Application Management
+![Application Overview](./Docs/Screenshots/application%20overview.png)
+![Application Users](./Docs/Screenshots/application%20users.png)
+![Application Roles](./Docs/Screenshots/application%20roles.png)
+![Application Settings](./Docs/Screenshots/application%20settings.png)
+
+### API & Security
+![API Keys](./Docs/Screenshots/api%20keys.png)
+![API Playground](./Docs/Screenshots/api%20playground.png)
+![Audit Logs](./Docs/Screenshots/audit%20logs.png)
+
+### Team & Organization
+![Members](./Docs/Screenshots/members.png)
+![Invitation](./Docs/Screenshots/invitation.png)
+![Assign Roles](./Docs/Screenshots/assign%20org%20roles.png)
+
+### Deployment
+![Railway Deployment](./Docs/Screenshots/railway.png)
