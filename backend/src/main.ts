@@ -12,8 +12,7 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin: true, // Allow all origins for API accessibility
-    credentials: true,
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization, x-api-key',
   });

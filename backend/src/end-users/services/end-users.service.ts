@@ -447,6 +447,73 @@ export class EndUsersService {
     };
   }
 
+  async findAllRoles(applicationId: string) {
+    const roles = await this.prisma.applicationRole.findMany({
+      where: { applicationId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
+      },
+    });
+
+    return roles.map((r) => ({
+      role_name: r.name,
+      roleId: r.id,
+      description: r.description,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async assignRole(applicationId: string, userId: string, roleId: string) {
+    const [user, role] = await Promise.all([
+      this.prisma.endUser.findFirst({
+        where: { id: userId, applicationId },
+      }),
+      this.prisma.applicationRole.findFirst({
+        where: { id: roleId, applicationId },
+      }),
+    ]);
+
+    if (!user || !role) {
+      throw new NotFoundException('User or Role not found in this application');
+    }
+
+    return this.prisma.endUserRoleAssignment.upsert({
+      where: {
+        endUserId_roleId: {
+          endUserId: userId,
+          roleId,
+        },
+      },
+      update: {},
+      create: {
+        endUserId: userId,
+        roleId,
+      },
+    });
+  }
+
+  async updateRole(
+    applicationId: string,
+    roleId: string,
+    dto: { name?: string; description?: string },
+  ) {
+    const role = await this.prisma.applicationRole.findFirst({
+      where: { id: roleId, applicationId },
+    });
+
+    if (!role) {
+      throw new NotFoundException('Role not found in this application');
+    }
+
+    return this.prisma.applicationRole.update({
+      where: { id: roleId },
+      data: dto,
+    });
+  }
+
   private async issueAccessToken(
     userId: string,
     sessionId: string,

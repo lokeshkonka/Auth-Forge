@@ -26,8 +26,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const responseBody = {
       statusCode: httpStatus,
       timestamp: new Date().toISOString(),
-      path: httpAdapter.getRequestUrl(ctx.getRequest()),
-      message: (exception as any).message || 'Internal server error',
+      path: httpAdapter.getRequestUrl(ctx.getRequest()).split('?')[0],
+      message: (exception as any).response?.message || (exception as any).message || 'Internal server error',
     };
 
     if (httpStatus === HttpStatus.INTERNAL_SERVER_ERROR) {

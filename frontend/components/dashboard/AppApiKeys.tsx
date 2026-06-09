@@ -269,10 +269,13 @@ export function AppApiKeys() {
 
               {/* Card Footer / Quick ID */}
               <div className="mt-auto px-6 py-4 bg-background/50 border-t border-border flex justify-between items-center">
-                 <span className="text-[10px] font-mono text-text-secondary/70 truncate pr-4">ID: {key.id}</span>
-                 <div className="flex items-center gap-1.5">
+                 <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] font-mono text-text-secondary/50 uppercase tracking-tighter">Key Identification</span>
+                    <span className="text-[10px] font-mono text-text-primary/80 truncate pr-4">{key.id.split('-')[0]}...{key.id.split('-').pop()}</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary-brand/5 border border-primary-brand/10">
                     <ShieldCheck size={10} className="text-primary-brand" />
-                    <span className="text-[9px] font-black uppercase text-text-primary tracking-tighter">Production</span>
+                    <span className="text-[9px] font-black uppercase text-primary-brand tracking-tighter">Production Grade</span>
                  </div>
               </div>
             </div>

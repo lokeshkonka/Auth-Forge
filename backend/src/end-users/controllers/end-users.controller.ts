@@ -194,7 +194,7 @@ export class EndUsersController {
     );
   }
 
-  @ApiOperation({ summary: 'Get End-User Profile' })
+  @ApiOperation({ summary: 'End-User Profile' })
   @ApiSecurity('PublishableKey')
   @ApiBearerAuth('EndUser-JWT')
   @UseGuards(ApiKeyAuthGuard, EndUserJwtAuthGuard)
@@ -205,6 +205,58 @@ export class EndUsersController {
   ) {
     this.validateSlug(req, applicationSlug);
     return this.endUsersService.getProfile(req.user.userId);
+  }
+
+  // --- New Public Role Management APIs (Publishable Key) ---
+
+  @ApiOperation({ summary: 'Assign Role to User' })
+  @ApiSecurity('PublishableKey')
+  @UseGuards(ApiKeyAuthGuard)
+  @Post('assign-roles')
+  assignRoles(
+    @Param('applicationSlug') applicationSlug: string,
+    @Req() req: RequestWithAuth,
+    @Body() body: { userId: string; roleId: string },
+  ) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.assignRole(req.applicationId, body.userId, body.roleId);
+  }
+
+  @ApiOperation({ summary: 'Update Role' })
+  @ApiSecurity('PublishableKey')
+  @UseGuards(ApiKeyAuthGuard)
+  @Patch('update-role')
+  updateRole(
+    @Param('applicationSlug') applicationSlug: string,
+    @Req() req: RequestWithAuth,
+    @Body() body: { roleId: string; name?: string; description?: string },
+  ) {
+    this.validateSlug(req, applicationSlug);
+    const { roleId, ...dto } = body;
+    return this.endUsersService.updateRole(req.applicationId, roleId, dto);
+  }
+
+  // --- Secret Key Role Fetching ---
+
+  @ApiOperation({ summary: 'Get All Application Roles' })
+  @ApiSecurity('SecretKey')
+  @UseGuards(ApiKeyAuthGuard, SecretKeyGuard)
+  @Get('all-roles')
+  getAllRoles(
+    @Param('applicationSlug') applicationSlug: string,
+    @Req() req: RequestWithAuth,
+  ) {
+    this.validateSlug(req, applicationSlug);
+    return this.endUsersService.findAllRoles(req.applicationId);
+  }
+
+  @ApiOperation({ summary: 'Health Check' })
+  @ApiSecurity('PublishableKey')
+  @UseGuards(ApiKeyAuthGuard)
+  @Get('health')
+  health(@Param('applicationSlug') applicationSlug: string, @Req() req: RequestWithAuth) {
+    this.validateSlug(req, applicationSlug);
+    return { status: 'ok', application: req.application.name };
   }
 
   @ApiOperation({ summary: 'List End-User Sessions' })

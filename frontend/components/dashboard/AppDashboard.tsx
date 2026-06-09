@@ -73,11 +73,11 @@ export function AppDashboard() {
   const maxCount = Math.max(...stats.trends.map(t => t.count), 1);
 
   const checklistItems = [
-    { name: 'handle permissions', status: 'ready', icon: Key, view: 'permissions' },
     { name: 'handle roles', status: 'ready', icon: ShieldCheck, view: 'roles' },
     { name: 'view audit', status: 'ready', icon: Activity, view: 'audit-logs' },
     { name: 'handle members', status: 'ready', icon: Users, view: 'members' },
     { name: 'handle applications', status: 'ready', icon: LayoutGrid, view: 'overview' },
+    { name: 'API Credentials', status: 'ready', icon: Key, view: 'api-keys' },
   ];
 
   return (
@@ -142,29 +142,29 @@ export function AppDashboard() {
             </div>
           </div>
 
-          <div className="h-64 flex items-end justify-between gap-2 md:gap-4 px-2">
+          <div className="h-80 flex items-end justify-between gap-3 md:gap-6 px-4">
             {stats.trends.map((day, idx) => {
               const height = (day.count / maxCount) * 100;
               const isToday = idx === stats.trends.length - 1;
               
               return (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-4 group relative">
+                <div key={day.date} className="flex-1 flex flex-col items-center gap-4 group relative h-full">
                   <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-10 bg-text-primary text-background px-3 py-1.5 rounded-md text-[11px] font-black whitespace-nowrap shadow-2xl border border-white/20">
                     {day.count} requests
                   </div>
                   
-                  <div className="w-full bg-surface/50 rounded-t-lg relative overflow-hidden h-full border-x border-t border-border/30">
+                  <div className="w-full bg-surface/30 rounded-t-lg relative overflow-hidden h-full border-x border-t border-border/20 flex flex-col justify-end">
                     <div 
                       className={cn(
-                        "absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out",
+                        "w-full transition-all duration-1000 ease-out",
                         isToday ? "bg-primary-brand shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-primary-brand/30 group-hover:bg-primary-brand/50"
                       )}
-                      style={{ height: `${Math.max(height, 4)}%` }}
+                      style={{ height: `${Math.max(height, 2)}%` }}
                     />
                   </div>
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center pb-2">
                     <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest transition-colors",
+                      "text-[9px] font-black uppercase tracking-tighter transition-colors",
                       isToday ? "text-primary-brand" : "text-text-secondary group-hover:text-text-primary"
                     )}>
                       {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}

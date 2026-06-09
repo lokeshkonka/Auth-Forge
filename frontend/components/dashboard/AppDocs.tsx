@@ -189,11 +189,73 @@ export function AppDocs() {
               </pre>
             </div>
           </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 text-primary-brand">
+              <Users size={16} />
+              <h3 className="text-sm font-bold uppercase tracking-widest">Assign Role to User</h3>
+            </div>
+            <p className="text-xs text-text-secondary">Assign a predefined role to an end-user using your **Publishable Key**.</p>
+            <div className="auth-card p-0 overflow-hidden border-border">
+              <div className="bg-surface p-2 border-b border-border flex justify-between items-center px-4">
+                <span className="text-[10px] font-mono text-text-secondary uppercase">POST /{currentApp.slug}/assign-roles</span>
+              </div>
+              <pre className="p-4 text-[11px] text-text-primary font-mono overflow-x-auto bg-background/50">
+{`curl -X POST ${baseUrl}/${currentApp.slug}/assign-roles \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_PUBLISHABLE_KEY" \\
+  -d '{
+    "userId": "user_id_here",
+    "roleId": "role_id_here"
+  }'`}
+              </pre>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 text-primary-brand">
+              <Settings size={16} />
+              <h3 className="text-sm font-bold uppercase tracking-widest">Update Role</h3>
+            </div>
+            <p className="text-xs text-text-secondary">Update role metadata using your **Publishable Key**.</p>
+            <div className="auth-card p-0 overflow-hidden border-border">
+              <div className="bg-surface p-2 border-b border-border flex justify-between items-center px-4">
+                <span className="text-[10px] font-mono text-text-secondary uppercase">PATCH /{currentApp.slug}/update-role</span>
+              </div>
+              <pre className="p-4 text-[11px] text-text-primary font-mono overflow-x-auto bg-background/50">
+{`curl -X PATCH ${baseUrl}/${currentApp.slug}/update-role \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_PUBLISHABLE_KEY" \\
+  -d '{
+    "roleId": "role_id_here",
+    "name": "Updated Name",
+    "description": "Updated Description"
+  }'`}
+              </pre>
+            </div>
+          </section>
         </div>
       )}
 
       {activeTab === 'server' && (
         <div className="space-y-12 max-w-4xl">
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 text-red-500">
+              <Database size={16} />
+              <h3 className="text-sm font-bold uppercase tracking-widest">Fetch All Application Roles</h3>
+            </div>
+            <p className="text-xs text-text-secondary">Retrieve all available roles for your application using a **Secret Key**.</p>
+            <div className="auth-card p-0 overflow-hidden border-border">
+              <div className="bg-surface p-2 border-b border-border flex justify-between items-center px-4">
+                <span className="text-[10px] font-mono text-text-secondary uppercase">GET /{currentApp.slug}/all-roles</span>
+              </div>
+              <pre className="p-4 text-[11px] text-text-primary font-mono overflow-x-auto bg-background/50">
+{`curl -X GET ${baseUrl}/${currentApp.slug}/all-roles \\
+  -H "x-api-key: YOUR_SECRET_KEY"`}
+              </pre>
+            </div>
+          </section>
+
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-red-500">
               <Database size={16} />

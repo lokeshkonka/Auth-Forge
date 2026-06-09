@@ -22,24 +22,15 @@ export class ApiKeyAuthGuard implements CanActivate {
     const apiKey = request.headers['x-api-key'];
 
     if (!apiKey || typeof apiKey !== 'string') {
-      throw new UnauthorizedException('API Key is missing');
-    }
-
-    // Try to get from cache
-    const cacheKey = `apikey:${apiKey}`;
-    const cachedData = await this.cacheManager.get<{
-      application: any;
-      applicationId: string;
-    }>(cacheKey);
-
-    if (cachedData) {
-      request.application = cachedData.application;
-      request.applicationId = cachedData.applicationId;
-      return true;
+      throw new UnauthorizedException('Invalid API Key');
     }
 
     const apiKeys = await this.prisma.apiKey.findMany({
-      include: {
+      select: {
+        id: true,
+        publishableKeyHash: true,
+        secretKeyHash: true,
+        applicationId: true,
         application: true,
       },
     });
@@ -63,15 +54,9 @@ export class ApiKeyAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid API Key');
     }
 
-    // Cache the result for 5 minutes
-    await this.cacheManager.set(
-      cacheKey,
-      {
-        application: matchedKey.application,
-        applicationId: matchedKey.applicationId,
-      },
-      300000,
-    );
+    // Attach application to request
+    request.application = matchedKey.application;
+    request.applicationId = matchedKey.applicationId;
 
     // Update lastUsedAt asynchronously
     this.prisma.apiKey
@@ -80,10 +65,6 @@ export class ApiKeyAuthGuard implements CanActivate {
         data: { lastUsedAt: new Date() },
       })
       .catch((err) => console.error('Failed to update lastUsedAt:', err));
-
-    // Attach application to request
-    request.application = matchedKey.application;
-    request.applicationId = matchedKey.applicationId;
 
     return true;
   }
