@@ -20,7 +20,8 @@ import {
   Activity,
   History,
   Lock,
-  Globe
+  Globe,
+  Search
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDashboard } from '@/context/DashboardContext';
