@@ -16,22 +16,11 @@ import { AppApiKeys } from '@/components/dashboard/AppApiKeys';
 import { AppDocs } from '@/components/dashboard/AppDocs';
 import { AppSettings } from '@/components/dashboard/AppSettings';
 
-interface Application {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  _count?: {
-    endUsers: number;
-    apiKeys: number;
-  }
-}
-
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useAuth();
+...
   const { currentOrg, setCurrentApp, currentApp, activeSubView } = useDashboard();
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newAppName, setNewAppName] = useState("");
   const [newAppDescription, setNewAppDescription] = useState("");

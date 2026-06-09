@@ -14,6 +14,11 @@ interface Application {
   id: string;
   name: string;
   slug: string;
+  description?: string;
+  _count?: {
+    endUsers: number;
+    apiKeys: number;
+  };
 }
 
 interface DashboardContextType {
