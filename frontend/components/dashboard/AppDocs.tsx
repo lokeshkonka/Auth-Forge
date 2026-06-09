@@ -16,7 +16,8 @@ import {
   Database,
   Globe,
   Users,
-  Settings
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDashboard } from '@/context/DashboardContext';
