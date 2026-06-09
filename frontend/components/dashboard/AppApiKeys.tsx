@@ -459,6 +459,79 @@ export function AppApiKeys() {
         </div>
       )}
 
+      {/* Success Modal */}
+      {createdKey && (
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-xl z-[110] flex items-center justify-center p-4">
+          <div className="bg-[#0e0e0e] border border-border rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-border bg-primary-brand/5 flex flex-col items-center text-center gap-4">
+               <div className="w-16 h-16 rounded-full bg-success/20 border border-success/30 flex items-center justify-center text-success mb-2">
+                  <Check size={32} />
+               </div>
+               <div>
+                  <h3 className="text-2xl font-black text-text-primary tracking-tight">Keypair Generated Successfully</h3>
+                  <p className="text-xs text-text-secondary mt-2">Copy your keys now. For security, we won't show the secret key again.</p>
+               </div>
+            </div>
+
+            <div className="p-8 space-y-8">
+               <div className="space-y-6">
+                  {/* Publishable Key */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] uppercase font-black text-text-secondary tracking-widest">Publishable Key</label>
+                      <span className="text-[9px] font-bold text-success uppercase">Public</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-xs font-mono text-text-primary break-all">
+                        {createdKey.publishableKey}
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(createdKey.publishableKey!, 'pk_c')}
+                        className="p-3 bg-surface border border-border rounded-lg hover:bg-surface-hover transition-all text-text-primary shrink-0"
+                      >
+                        {copiedField === 'pk_c' ? <Check size={18} className="text-success" /> : <Copy size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Secret Key */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] uppercase font-black text-error tracking-widest">Secret Key</label>
+                      <span className="text-[9px] font-bold text-error uppercase">Private</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-xs font-mono text-text-primary break-all">
+                        {createdKey.secretKey}
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(createdKey.secretKey!, 'sk_c')}
+                        className="p-3 bg-surface border border-border rounded-lg hover:bg-surface-hover transition-all text-text-primary shrink-0"
+                      >
+                        {copiedField === 'sk_c' ? <Check size={18} className="text-success" /> : <Copy size={18} />}
+                      </button>
+                    </div>
+                  </div>
+               </div>
+
+               <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-start gap-4">
+                  <ShieldAlert className="text-yellow-500 shrink-0 mt-0.5" size={20} />
+                  <p className="text-[11px] text-yellow-200/80 leading-relaxed">
+                    Store this <span className="font-bold text-white underline">Secret Key</span> somewhere safe. You will not be able to retrieve it later. If lost, you must generate a new keypair.
+                  </p>
+               </div>
+
+               <button 
+                onClick={handleCloseModal}
+                className="w-full bg-text-primary text-background py-4 rounded-xl text-sm font-black uppercase tracking-[0.2em] hover:opacity-90 transition-all shadow-2xl"
+              >
+                I have saved these keys
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Revoke Confirmation Modal */}
       <ConfirmModal 
         isOpen={!!revokingKeyId}

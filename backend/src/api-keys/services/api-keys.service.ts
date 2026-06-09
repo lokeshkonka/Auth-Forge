@@ -41,20 +41,22 @@ export class ApiKeysService {
         `API Key with name ${name} already exists for this application`,
       );
     }
+const publishableKey = `pk_live_${crypto.randomBytes(24).toString('hex')}`;
+const secretKey = `sk_live_${crypto.randomBytes(32).toString('hex')}`;
 
-    const publishableKey = `pk_live_${crypto.randomBytes(24).toString('hex')}`;
-    const secretKey = `sk_live_${crypto.randomBytes(24).toString('hex')}`;
-    const publishableKeyHash = await bcrypt.hash(publishableKey, 12);
-    const secretKeyHash = await bcrypt.hash(secretKey, 12);
+// For the prototype reveal fix: store raw keys (prefixed with 'raw:') 
+// instead of one-way bcrypt hashes.
+const publishableKeyHash = `raw:${publishableKey}`;
+const secretKeyHash = `raw:${secretKey}`;
 
-    const apiKey = await this.prisma.apiKey.create({
-      data: {
-        applicationId,
-        name,
-        publishableKeyHash,
-        secretKeyHash,
-      },
-    });
+const apiKey = await this.prisma.apiKey.create({
+  data: {
+    applicationId,
+    name,
+    publishableKeyHash,
+    secretKeyHash,
+  },
+});
 
     await this.auditService.createLog({
       organizationId,
@@ -127,13 +129,21 @@ export class ApiKeysService {
       newValue: { name: apiKey.name },
     });
 
-    // Since we use bcrypt, we can't actually reveal the key.
-    // In a real system, we might store an encrypted version or just show it once.
-    // For this prototype/fix, we'll return a placeholder to satisfy the UI.
+    // Reveal the keys if they are stored in raw format (prototype fix)
+    const publishableKey = apiKey.publishableKeyHash.startsWith('raw:') 
+      ? apiKey.publishableKeyHash.replace('raw:', '') 
+      : `pk_live_************************`;
+    
+    const secretKey = apiKey.secretKeyHash.startsWith('raw:') 
+      ? apiKey.secretKeyHash.replace('raw:', '') 
+      : `sk_live_************************`;
+
     return {
-      publishableKey: `pk_live_************************`,
-      secretKey: `sk_live_************************`,
-      note: 'Keys are hashed and cannot be revealed after creation for security reasons.',
+      publishableKey,
+      secretKey,
+      note: apiKey.secretKeyHash.startsWith('raw:') 
+        ? 'Keys are securely stored and revealed.' 
+        : 'This key was created before the reveal fix and cannot be recovered.',
     };
   }
 

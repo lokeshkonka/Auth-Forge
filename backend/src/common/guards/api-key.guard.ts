@@ -38,10 +38,18 @@ export class ApiKeyAuthGuard implements CanActivate {
     let matchedKey: any = null;
     for (const key of apiKeys) {
       let isMatch = false;
-      if (apiKey.startsWith('pk_live_')) {
-        isMatch = await bcrypt.compare(apiKey, key.publishableKeyHash);
-      } else if (apiKey.startsWith('sk_live_')) {
-        isMatch = await bcrypt.compare(apiKey, key.secretKeyHash);
+      const targetHash = apiKey.startsWith('pk_live_') ? key.publishableKeyHash : key.secretKeyHash;
+
+      if (targetHash.startsWith('raw:')) {
+        // Direct comparison for raw stored keys
+        isMatch = (targetHash === `raw:${apiKey}`);
+      } else {
+        // Bcrypt comparison for legacy hashed keys
+        try {
+          isMatch = await bcrypt.compare(apiKey, targetHash);
+        } catch (e) {
+          isMatch = false;
+        }
       }
 
       if (isMatch) {
