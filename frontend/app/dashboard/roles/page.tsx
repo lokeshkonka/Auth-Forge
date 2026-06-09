@@ -372,7 +372,7 @@ export default function RolesPage() {
                       )}
                     </React.Fragment>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>

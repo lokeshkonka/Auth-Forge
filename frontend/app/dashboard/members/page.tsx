@@ -350,7 +350,8 @@ export default function MembersPage() {
                                        className="text-xs font-bold text-error hover:underline disabled:opacity-50"
                                      >
                                        Remove Member
-                                     </button>                                  </div>
+                                     </button>
+                                  </div>
                                </div>
                             </div>
                          </div>
@@ -358,7 +359,7 @@ export default function MembersPage() {
                     </tr>
                   )}
                 </React.Fragment>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
